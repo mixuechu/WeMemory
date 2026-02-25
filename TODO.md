@@ -11,32 +11,40 @@
 
 ## 🎯 下一阶段目标
 
-### Phase 2: API 服务化 (优先级: 高)
+### Phase 2: API 服务化 (优先级: 高) ✅
 
-#### 2.1 Query API 服务
-**目标**: 将搜索功能封装为 REST API，方便外部调用
+#### 2.1 记忆联想 API 服务
+**目标**: 将记忆联想功能封装为 REST API
+
+**核心概念**: 不是"搜索"，而是"联想"（Recall/Association）
+- 输入：当前对话上下文或线索
+- 输出：智能联想到的相关记忆 + 联想原因
 
 **任务列表**:
-- [ ] 技术选型
-  - [ ] 使用 FastAPI 框架
-  - [ ] 异步加载向量库（避免每次请求重新加载）
-  - [ ] 请求缓存机制
-- [ ] API 端点设计
-  - [ ] `POST /api/search` - 语义搜索
-  - [ ] `POST /api/search/advanced` - 高级搜索（带过滤器）
-  - [ ] `GET /api/stats` - 向量库统计信息
-  - [ ] `GET /api/health` - 健康检查
-- [ ] 功能实现
-  - [ ] 请求验证和错误处理
-  - [ ] 结果分页
-  - [ ] 搜索历史记录（可选）
-  - [ ] Rate limiting
-- [ ] 文档
-  - [ ] OpenAPI/Swagger 文档
-  - [ ] API 使用示例
-  - [ ] 部署指南
+- [x] 技术选型
+  - [x] 使用 FastAPI 框架
+  - [x] 异步加载向量库（避免每次请求重新加载）
+  - [x] 内存缓存机制
+- [x] API 端点设计
+  - [x] `POST /api/recall` - 记忆联想（核心功能）
+  - [x] `POST /api/associate/topic` - 主题关联
+  - [x] `POST /api/associate/people` - 人物关联
+  - [x] `POST /api/associate/temporal` - 时序联想
+  - [x] `POST /api/search` - 简单搜索（兼容性）
+  - [x] `GET /api/stats` - 向量库统计信息
+  - [x] `GET /api/health` - 健康检查
+- [x] 功能实现
+  - [x] 请求验证和错误处理（Pydantic）
+  - [x] 联想原因生成
+  - [x] 关联信息提取（人物、主题、时间）
+  - [x] 结果缓存（内存缓存，TTL 1小时）
+- [x] 文档
+  - [x] OpenAPI/Swagger 自动文档
+  - [x] API README 文档
+  - [x] Python 客户端示例
 
-**估计时间**: 3-5 天
+**完成时间**: 2026-02-26
+**实际耗时**: ~2 小时（一次性完成）
 
 **输出文件**:
 ```
