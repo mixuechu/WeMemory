@@ -1,0 +1,118 @@
+# ===========================
+# 微信记忆系统 - Git 忽略文件
+# ===========================
+
+# ============ 敏感信息 ============
+# 环境变量（包含API密钥等）
+.env
+.env.local
+.env.*.local
+
+# Google Cloud 凭证
+*.json
+!package.json
+!tsconfig.json
+credentials.json
+service-account*.json
+
+# ============ 用户数据 ============
+# 原始聊天记录（包含个人隐私）
+chat_data_filtered/
+聊天记录excel/
+*.xlsx
+*.xls
+
+# 向量库文件（太大，不适合上传）
+vector_stores/*.pkl
+vector_stores/*.faiss
+vector_stores/shards/
+vector_stores/patches/
+*.pkl
+*.faiss
+
+# ============ Python ============
+# 字节码
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# 虚拟环境
+venv/
+venv_*/
+ENV/
+env/
+.venv
+
+# 测试和覆盖率
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# ============ 日志和临时文件 ============
+# 日志
+logs/
+*.log
+
+# 临时文件
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Checkpoint 文件
+checkpoint_*.pkl
+
+# ============ IDE 和编辑器 ============
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+
+# Claude Code
+.claude/settings.local.json
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# ============ 系统文件 ============
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+.Trash-*
+
+# ============ 构建和分发 ============
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ============ 开发过程文件（不上传）============
+# 废弃的脚本和文档
+scripts/deprecated/
+docs/archive/
+
+# 测试输出
+test_output/
+*.txt
+!requirements.txt
+
+# ============ 示例数据（可选）============
+# 如果需要提供示例，创建单独的 examples/ 目录
+# examples/ 中可以放少量脱敏的示例数据
