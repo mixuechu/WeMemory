@@ -9,9 +9,12 @@
 .env.*.local
 
 # Google Cloud 凭证
-*.json
+# 例外：允许特定JSON文件
 !package.json
 !tsconfig.json
+!examples/data_samples/*.json  # 允许示例数据文件
+# 忽略所有其他JSON文件
+*.json
 credentials.json
 service-account*.json
 

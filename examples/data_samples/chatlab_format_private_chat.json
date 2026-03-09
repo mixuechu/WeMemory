@@ -1,0 +1,139 @@
+{
+  "chatlab": {
+    "version": "0.0.2",
+    "exportedAt": 1771866312,
+    "generator": "WeFlow"
+  },
+  "meta": {
+    "name": "张三",
+    "platform": "wechat",
+    "type": "private",
+    "groupAvatar": "https://wx.qlogo.cn/mmhead/ver_1/..."
+  },
+  "members": [
+    {
+      "platformId": "wxid_example123456",
+      "accountName": "张三",
+      "avatar": "https://wx.qlogo.cn/mmhead/ver_1/..."
+    },
+    {
+      "platformId": "wxid_self000000",
+      "accountName": "我自己",
+      "avatar": "https://wx.qlogo.cn/mmhead/ver_1/..."
+    }
+  ],
+  "messages": [
+    {
+      "sender": "wxid_example123456",
+      "accountName": "张三",
+      "timestamp": 1744384972,
+      "type": 0,
+      "content": "你好！"
+    },
+    {
+      "sender": "wxid_example123456",
+      "accountName": "张三",
+      "timestamp": 1744386107,
+      "type": 80,
+      "content": "你已添加了张三，现在可以开始聊天了。"
+    },
+    {
+      "sender": "wxid_self000000",
+      "accountName": "我自己",
+      "timestamp": 1744390353,
+      "type": 0,
+      "content": "到了家跟我说一声"
+    },
+    {
+      "sender": "wxid_self000000",
+      "accountName": "我自己",
+      "timestamp": 1744390355,
+      "type": 0,
+      "content": "注意安全"
+    },
+    {
+      "sender": "wxid_example123456",
+      "accountName": "张三",
+      "timestamp": 1744390360,
+      "type": 0,
+      "content": "好的！"
+    },
+    {
+      "sender": "wxid_example123456",
+      "accountName": "张三",
+      "timestamp": 1744390364,
+      "type": 0,
+      "content": "早点休息！"
+    },
+    {
+      "sender": "wxid_self000000",
+      "accountName": "我自己",
+      "timestamp": 1744390377,
+      "type": 0,
+      "content": "不用担心，我很快就睡了"
+    },
+    {
+      "sender": "wxid_example123456",
+      "accountName": "张三",
+      "timestamp": 1744390488,
+      "type": 0,
+      "content": "好嘞 下次约"
+    },
+    {
+      "sender": "wxid_example123456",
+      "accountName": "张三",
+      "timestamp": 1751721612,
+      "type": 99,
+      "content": "[转账] ¥7.65"
+    },
+    {
+      "sender": "wxid_self000000",
+      "accountName": "我自己",
+      "timestamp": 1751721617,
+      "type": 99,
+      "content": "[转账收款] ￥7.65"
+    },
+    {
+      "sender": "wxid_self000000",
+      "accountName": "我自己",
+      "timestamp": 1771237486,
+      "type": 0,
+      "content": "新年快乐张老师"
+    },
+    {
+      "sender": "wxid_self000000",
+      "accountName": "我自己",
+      "timestamp": 1771237497,
+      "type": 0,
+      "content": "新年万事顺利！"
+    },
+    {
+      "sender": "wxid_example123456",
+      "accountName": "张三",
+      "timestamp": 1771237586,
+      "type": 0,
+      "content": "新年快乐！心想事成顺顺利利！"
+    },
+    {
+      "sender": "wxid_self000000",
+      "accountName": "我自己",
+      "timestamp": 1771237637,
+      "type": 0,
+      "content": "最近工作怎么样，好久没见你了"
+    },
+    {
+      "sender": "wxid_example123456",
+      "accountName": "张三",
+      "timestamp": 1771237777,
+      "type": 0,
+      "content": "哈哈哈年后约起！"
+    },
+    {
+      "sender": "wxid_example123456",
+      "accountName": "张三",
+      "timestamp": 1771237786,
+      "type": 0,
+      "content": "工作挺好的，今天还加班了"
+    }
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "chatlab": {
+    "version": "0.0.2",
+    "exportedAt": 1771866373,
+    "generator": "WeFlow"
+  },
+  "meta": {
+    "name": "技术交流群",
+    "platform": "wechat",
+    "type": "group",
+    "groupId": "123456789@chatroom",
+    "groupAvatar": "https://wx.qlogo.cn/mmcrhead/..."
+  },
+  "members": [
+    {
+      "platformId": "123456789@chatroom",
+      "accountName": "技术交流群",
+      "avatar": "https://wx.qlogo.cn/mmcrhead/..."
+    },
+    {
+      "platformId": "wxid_user001",
+      "accountName": "张三",
+      "avatar": "https://wx.qlogo.cn/mmhead/ver_1/..."
+    },
+    {
+      "platformId": "wxid_self000000",
+      "accountName": "我自己",
+      "avatar": "https://wx.qlogo.cn/mmhead/ver_1/..."
+    },
+    {
+      "platformId": "wxid_user002",
+      "accountName": "李四",
+      "avatar": "https://wx.qlogo.cn/mmhead/ver_1/..."
+    },
+    {
+      "platformId": "wxid_user003",
+      "accountName": "王五",
+      "avatar": "https://wx.qlogo.cn/mmhead/ver_1/..."
+    }
+  ],
+  "messages": [
+    {
+      "sender": "123456789@chatroom",
+      "accountName": "技术交流群",
+      "timestamp": 1748911573,
+      "type": 80,
+      "content": "\"$username$\"邀请你加入了群聊，群聊参与人还有：$others$"
+    },
+    {
+      "sender": "wxid_user001",
+      "accountName": "张三",
+      "timestamp": 1748911587,
+      "type": 0,
+      "content": "早上好大家"
+    },
+    {
+      "sender": "wxid_user001",
+      "accountName": "张三",
+      "timestamp": 1748911610,
+      "type": 0,
+      "content": "今天有个技术问题想请教一下"
+    },
+    {
+      "sender": "wxid_user001",
+      "accountName": "张三",
+      "timestamp": 1748911625,
+      "type": 0,
+      "content": "关于Python的异步编程"
+    },
+    {
+      "sender": "wxid_self000000",
+      "accountName": "我自己",
+      "timestamp": 1748911640,
+      "type": 0,
+      "content": "可以说说具体是什么问题吗"
+    },
+    {
+      "sender": "wxid_user001",
+      "accountName": "张三",
+      "timestamp": 1748911670,
+      "type": 0,
+      "content": "我在用asyncio的时候遇到了一些问题"
+    },
+    {
+      "sender": "wxid_user002",
+      "accountName": "李四",
+      "timestamp": 1748911680,
+      "type": 0,
+      "content": "我之前也遇到过类似的"
+    },
+    {
+      "sender": "wxid_user002",
+      "accountName": "李四",
+      "timestamp": 1748911690,
+      "type": 0,
+      "content": "可以分享一下代码吗"
+    },
+    {
+      "sender": "wxid_user001",
+      "accountName": "张三",
+      "timestamp": 1748911800,
+      "type": 1,
+      "content": "[图片]"
+    },
+    {
+      "sender": "wxid_self000000",
+      "accountName": "我自己",
+      "timestamp": 1748911850,
+      "type": 0,
+      "content": "看到了，这里需要用await"
+    },
+    {
+      "sender": "wxid_user003",
+      "accountName": "王五",
+      "timestamp": 1748911900,
+      "type": 0,
+      "content": "对的，异步函数必须要await"
+    },
+    {
+      "sender": "wxid_user001",
+      "accountName": "张三",
+      "timestamp": 1748911950,
+      "type": 0,
+      "content": "明白了，谢谢大家！"
+    },
+    {
+      "sender": "wxid_user001",
+      "accountName": "张三",
+      "timestamp": 1748911960,
+      "type": 0,
+      "content": "下次请你们喝咖啡"
+    },
+    {
+      "sender": "wxid_self000000",
+      "accountName": "我自己",
+      "timestamp": 1748911980,
+      "type": 0,
+      "content": "不客气，有问题随时问"
+    }
+  ]
+}
