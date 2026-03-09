@@ -1,0 +1,14 @@
+# Core dependencies
+google-cloud-aiplatform>=1.38.0
+python-dotenv>=1.0.0
+numpy>=1.24.0
+
+# Text processing and search
+rank-bm25>=0.2.2
+jieba>=0.42.1
+
+# Vector indexing and search
+faiss-cpu>=1.7.4
+
+# Optional: for development
+# jupyter>=1.0.0

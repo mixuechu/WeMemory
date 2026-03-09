@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>对话与实体编辑器</title>
+    <!-- 加载数据文件 -->
+    <script src="merged_entities_data.js"></script>
+    <script src="person_details_data.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", Arial, sans-serif; background: #f5f5f5; }
+
+        .header {
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 { font-size: 20px; color: #333; margin-bottom: 10px; }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+        }
+
+        .stat-item { color: #666; }
+        .stat-value { color: #2196F3; font-weight: bold; }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 150px);
+        }
+
+        /* 左侧对话列表 */
+        .conversation-list {
+            width: 350px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+        }
+
+        .list-header {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .conv-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .conv-item:hover { background: #f8f9fa; }
+        .conv-item.active { background: #e3f2fd; border-left: 3px solid #2196F3; }
+        .conv-item.excluded { background: #ffebee; opacity: 0.7; }
+
+        .conv-name { font-weight: bold; color: #333; margin-bottom: 5px; }
+        .conv-meta { font-size: 12px; color: #666; }
+
+        .conv-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        .status-keep { background: #c8e6c9; color: #2e7d32; }
+        .status-exclude { background: #ffcdd2; color: #c62828; }
+
+        /* 右侧实体编辑区 */
+        .entity-editor {
+            flex: 1;
+            background: white;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .editor-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .editor-title { font-size: 18px; color: #333; margin-bottom: 10px; }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .btn-keep { background: #4CAF50; color: white; }
+        .btn-keep:hover { background: #45a049; }
+        .btn-exclude { background: #f44336; color: white; }
+        .btn-exclude:hover { background: #da190b; }
+        .btn-merge { background: #FF9800; color: white; }
+        .btn-merge:hover { background: #e68900; }
+        .btn-merge:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* 实体列表 */
+        .entity-list { margin-top: 20px; }
+
+        .entity-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #fafafa;
+            transition: all 0.2s;
+        }
+
+        .entity-item.selected {
+            border-color: #FF9800;
+            background: #fff3e0;
+        }
+
+        .entity-item.deleted {
+            opacity: 0.6;
+            background: #ffebee;
+            border-color: #f44336;
+        }
+
+        .entity-item.merged {
+            border-width: 2px;
+        }
+
+        /* 不同合并cluster的颜色 */
+        .entity-item.merged-0 { background: #e3f2fd; border-color: #2196F3; }
+        .entity-item.merged-1 { background: #f3e5f5; border-color: #9C27B0; }
+        .entity-item.merged-2 { background: #e8f5e9; border-color: #4CAF50; }
+        .entity-item.merged-3 { background: #fff3e0; border-color: #FF9800; }
+        .entity-item.merged-4 { background: #fce4ec; border-color: #E91E63; }
+        .entity-item.merged-5 { background: #e0f2f1; border-color: #009688; }
+        .entity-item.merged-6 { background: #fff9c4; border-color: #FFC107; }
+        .entity-item.merged-7 { background: #ede7f6; border-color: #673AB7; }
+        .entity-item.merged-8 { background: #e1f5fe; border-color: #03A9F4; }
+        .entity-item.merged-9 { background: #ffebee; border-color: #f44336; }
+
+        .entity-status-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: normal;
+            margin-left: 8px;
+        }
+
+        .tag-deleted {
+            background: #f44336;
+            color: white;
+        }
+
+        .tag-merged {
+            background: #2196F3;
+            color: white;
+        }
+
+        .entity-name.deleted {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .entity-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 15px;
+        }
+
+        .entity-header-left {
+            flex: 0 0 auto;
+            max-width: 400px;
+        }
+
+        .entity-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .entity-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .btn-small {
+            padding: 4px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .btn-delete { background: #f44336; color: white; }
+        .btn-restore { background: #4CAF50; color: white; }
+        .btn-details { background: #2196F3; color: white; }
+        .btn-unmerge { background: #FF9800; color: white; }
+        .btn-rename { background: #9C27B0; color: white; }
+        .btn-add-to-group { background: #4CAF50; color: white; }
+
+        .entity-details {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .entity-original {
+            margin-top: 5px;
+            padding: 5px;
+            background: white;
+            border-radius: 3px;
+            font-size: 11px;
+            color: #999;
+        }
+
+        /* 底部保存栏 */
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .save-status { color: #666; font-size: 13px; }
+        .btn-save {
+            background: #2196F3;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+        }
+        .btn-save:hover { background: #0b7dda; }
+
+        /* 合并对话框 */
+        .merge-dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            min-width: 400px;
+        }
+
+        .merge-dialog.active { display: block; }
+
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .dialog-overlay.active {
+            display: block !important;
+        }
+
+        .dialog-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .merge-preview {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .merge-item {
+            padding: 5px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 13px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .dialog-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        /* 详情对话框 */
+        .details-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            width: 700px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 1001;
+            display: none;
+        }
+
+        .details-dialog.active {
+            display: block;
+        }
+
+        .details-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 1;
+        }
+
+        .details-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .details-body {
+            padding: 20px;
+        }
+
+        .details-section {
+            margin-bottom: 20px;
+        }
+
+        .details-section h4 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .detail-item-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .detail-item-content {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .no-data {
+            color: #999;
+            font-style: italic;
+            padding: 10px;
+        }
+
+        .close-details {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-details:hover {
+            color: #333;
+        }
+
+        .loading-hint {
+            text-align: center;
+            padding: 20px;
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>对话与实体编辑器</h1>
+        <div class="stats">
+            <div class="stat-item">
+                <label for="file-input" style="cursor: pointer; color: #2196F3; text-decoration: underline;">
+                    📁 加载实体数据
+                </label>
+                <input type="file" id="file-input" accept=".json" style="display: none;" onchange="loadDataFromFile(event)">
+            </div>
+            <div class="stat-item">
+                <label for="details-input" style="cursor: pointer; color: #FF9800; text-decoration: underline;">
+                    📋 加载详情索引(可选)
+                </label>
+                <input type="file" id="details-input" accept=".json" style="display: none;" onchange="loadDetailsIndex(event)">
+            </div>
+            <div class="stat-item">总对话: <span class="stat-value" id="total-convs">0</span></div>
+            <div class="stat-item">保留: <span class="stat-value" id="keep-count">0</span></div>
+            <div class="stat-item">排除: <span class="stat-value" id="exclude-count">0</span></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 左侧对话列表 -->
+        <div class="conversation-list">
+            <div class="list-header">
+                <input type="text" class="search-box" id="search-input" placeholder="搜索对话...">
+            </div>
+            <div id="conv-list"></div>
+        </div>
+
+        <!-- 右侧实体编辑器 -->
+        <div class="entity-editor">
+            <div id="editor-content" class="empty-state">
+                <p id="empty-hint">正在加载数据...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部保存栏 -->
+    <div class="bottom-bar">
+        <div class="save-status" id="save-status">未保存</div>
+        <button class="btn-save" onclick="saveDecisions()">保存编辑结果</button>
+    </div>
+
+    <!-- 合并对话框 -->
+    <div class="dialog-overlay" id="dialog-overlay" onclick="closeMergeDialog()"></div>
+    <div class="merge-dialog" id="merge-dialog">
+        <div class="dialog-title">合并Person实体</div>
+        <div class="merge-preview" id="merge-preview"></div>
+        <div class="input-group">
+            <label>合并后的名称：</label>
+            <input type="text" id="merge-name-input">
+        </div>
+        <div class="dialog-actions">
+            <button class="btn" onclick="closeMergeDialog()">取消</button>
+            <button class="btn btn-merge" onclick="confirmMerge()">确认合并</button>
+        </div>
+    </div>
+
+    <!-- 详情对话框 -->
+    <div class="dialog-overlay" id="details-overlay" onclick="closeDetailsDialog()"></div>
+    <div class="details-dialog" id="details-dialog">
+        <div class="details-header">
+            <h3 id="details-title">实体详情</h3>
+            <button class="close-details" onclick="closeDetailsDialog()">&times;</button>
+        </div>
+        <div class="details-body" id="details-content">
+            <div class="loading-hint">加载中...</div>
+        </div>
+    </div>
+
+    <!-- 改名对话框 -->
+    <div class="dialog-overlay" id="rename-overlay" onclick="closeRenameDialog()"></div>
+    <div class="merge-dialog" id="rename-dialog">
+        <div class="dialog-title">实体改名</div>
+        <div style="padding: 10px; margin-bottom: 10px; background: #f5f5f5; border-radius: 4px;">
+            <div style="color: #666; font-size: 13px;">当前名称：</div>
+            <div style="font-weight: bold; margin-top: 5px;" id="rename-current-name"></div>
+        </div>
+        <div class="input-group">
+            <label>新名称：</label>
+            <input type="text" id="rename-name-input">
+        </div>
+        <div class="dialog-actions">
+            <button class="btn" onclick="closeRenameDialog()">取消</button>
+            <button class="btn btn-rename" onclick="confirmRename()">确认改名</button>
+        </div>
+    </div>
+
+    <!-- 添加到合并组对话框 -->
+    <div class="dialog-overlay" id="add-to-group-overlay" onclick="closeAddToGroupDialog()"></div>
+    <div class="merge-dialog" id="add-to-group-dialog" style="min-width: 500px;">
+        <div class="dialog-title">添加实体到合并组</div>
+        <div style="padding: 10px; margin-bottom: 10px; background: #f5f5f5; border-radius: 4px;">
+            <div style="color: #666; font-size: 13px;">目标合并组：</div>
+            <div style="font-weight: bold; margin-top: 5px;" id="add-to-group-target"></div>
+        </div>
+        <div style="margin-bottom: 15px; color: #666; font-size: 13px;">
+            选择要添加的实体（只显示未删除、未合并的实体）：
+        </div>
+        <div id="add-to-group-list" style="max-height: 300px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px;">
+        </div>
+        <div class="dialog-actions">
+            <button class="btn" onclick="closeAddToGroupDialog()">取消</button>
+            <button class="btn btn-add-to-group" onclick="confirmAddToGroup()">确认添加</button>
+        </div>
+    </div>
+
+    <script>
+        let mergedData = {}; // 加载的数据
+        let personDetailsIndex = null; // Person详情索引
+        let currentConv = null; // 当前选中的对话
+        let currentRenameEntity = null; // 当前正在改名的实体
+        let currentAddToGroupIndex = null; // 当前要添加到的合并组索引
+        let decisions = {
+            excluded_conversations: [],
+            conversation_edits: {}
+        };
+
+        // 从文件选择器加载数据
+        function loadDataFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    mergedData = JSON.parse(e.target.result);
+                    renderConversationList();
+                    updateStats();
+                    alert('数据加载成功！共 ' + Object.keys(mergedData).length + ' 个对话');
+                } catch (error) {
+                    alert('JSON解析失败: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 加载详情索引
+        function loadDetailsIndex(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    personDetailsIndex = JSON.parse(e.target.result);
+                    alert('详情索引加载成功！现在可以查看每个实体的关联信息');
+                    // 如果当前有选中的对话，重新渲染以显示"查看详情"按钮
+                    if (currentConv) {
+                        renderEntityEditor();
+                    }
+                } catch (error) {
+                    alert('JSON解析失败: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 渲染对话列表
+        function renderConversationList(filter = '') {
+            const container = document.getElementById('conv-list');
+            const convs = Object.keys(mergedData).sort();
+
+            container.innerHTML = '';
+
+            convs.forEach(convName => {
+                if (filter && !convName.toLowerCase().includes(filter.toLowerCase())) {
+                    return;
+                }
+
+                const entities = mergedData[convName];
+                const entityCount = Object.keys(entities).length;
+                const isExcluded = decisions.excluded_conversations.includes(convName);
+
+                const div = document.createElement('div');
+                div.className = 'conv-item' + (isExcluded ? ' excluded' : '');
+                div.onclick = () => selectConversation(convName);
+
+                div.innerHTML = `
+                    <div class="conv-name">${convName}</div>
+                    <div class="conv-meta">${entityCount} 个实体</div>
+                    <span class="conv-status ${isExcluded ? 'status-exclude' : 'status-keep'}">
+                        ${isExcluded ? '已排除' : '保留'}
+                    </span>
+                `;
+
+                container.appendChild(div);
+            });
+        }
+
+        // 选择对话
+        function selectConversation(convName) {
+            currentConv = convName;
+
+            // 更新左侧选中状态
+            document.querySelectorAll('.conv-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.querySelector('.conv-name').textContent === convName) {
+                    item.classList.add('active');
+                }
+            });
+
+            renderEntityEditor();
+        }
+
+        // 渲染实体编辑器
+        function renderEntityEditor() {
+            if (!currentConv) return;
+
+            const entities = mergedData[currentConv];
+            const isExcluded = decisions.excluded_conversations.includes(currentConv);
+            const edits = decisions.conversation_edits[currentConv] || {
+                excluded_entities: [],
+                manual_merges: [],
+                renamed_entities: {}
+            };
+
+            let html = `
+                <div class="editor-header">
+                    <div class="editor-title">${currentConv}</div>
+                    <div style="color: #666; font-size: 13px; margin-bottom: 10px;">
+                        共 ${Object.keys(entities).length} 个实体
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn ${isExcluded ? 'btn-keep' : 'btn-exclude'}"
+                                onclick="toggleConversationStatus()">
+                            ${isExcluded ? '设为保留' : '设为排除'}
+                        </button>
+                        <button class="btn btn-merge" id="merge-btn" onclick="openMergeDialog()" disabled>
+                            合并选中实体
+                        </button>
+                    </div>
+                </div>
+                <div class="entity-list">
+            `;
+
+            if (isExcluded) {
+                html += '<div style="padding: 20px; text-align: center; color: #f44336;">此对话已被排除，不参与建表</div>';
+            } else {
+                // 先将实体分类：正常、已删除、已合并
+                const normalEntities = [];
+                const deletedEntities = [];
+                const mergedEntities = [];
+
+                for (const [entityName, entityData] of Object.entries(entities)) {
+                    const isDeleted = edits.excluded_entities.includes(entityName);
+
+                    // 找到merge info和merge index
+                    let mergeInfo = null;
+                    let mergeIndex = -1;
+                    for (let i = 0; i < edits.manual_merges.length; i++) {
+                        if (edits.manual_merges[i].merged_entity_names.includes(entityName)) {
+                            mergeInfo = edits.manual_merges[i];
+                            mergeIndex = i;
+                            break;
+                        }
+                    }
+                    const isMerged = !!mergeInfo;
+
+                    const item = { entityName, entityData, isDeleted, isMerged, mergeInfo, mergeIndex };
+
+                    if (isMerged) {
+                        mergedEntities.push(item);
+                    } else if (isDeleted) {
+                        deletedEntities.push(item);
+                    } else {
+                        normalEntities.push(item);
+                    }
+                }
+
+                // 按顺序渲染：正常 → 已删除 → 已合并
+                const sortedEntities = [...normalEntities, ...deletedEntities, ...mergedEntities];
+
+                // 渲染分组标题和实体
+                let lastGroup = null;
+                let lastMergeIndex = null;
+
+                for (const item of sortedEntities) {
+                    const { entityName, entityData, isDeleted, isMerged, mergeInfo, mergeIndex } = item;
+
+                    // 添加分组标题
+                    let currentGroup = null;
+                    if (isMerged) currentGroup = 'merged';
+                    else if (isDeleted) currentGroup = 'deleted';
+                    else currentGroup = 'normal';
+
+                    if (currentGroup !== lastGroup) {
+                        if (currentGroup === 'deleted' && deletedEntities.length > 0) {
+                            html += `<div style="padding: 10px; background: #ffebee; border-left: 3px solid #f44336; margin: 15px 0 10px 0; font-weight: bold; color: #666;">已删除的实体 (${deletedEntities.length})</div>`;
+                        } else if (currentGroup === 'merged' && mergedEntities.length > 0) {
+                            html += `<div style="padding: 10px; background: #e3f2fd; border-left: 3px solid #2196F3; margin: 15px 0 10px 0; font-weight: bold; color: #666;">已合并的实体 (${mergedEntities.length})</div>`;
+                        }
+                        lastGroup = currentGroup;
+                    }
+
+                    // 为每个merge cluster添加标题
+                    if (isMerged && mergeIndex !== lastMergeIndex) {
+                        const clusterEntities = mergedEntities.filter(e => e.mergeIndex === mergeIndex);
+                        html += `<div style="padding: 8px; margin: 10px 0 5px 0; font-weight: bold; color: #555; border-bottom: 2px solid #ddd;">
+                            合并组 #${mergeIndex + 1}: ${mergeInfo.final_name} (${clusterEntities.length} 个实体)
+                            <button class="btn-small btn-add-to-group" onclick="openAddToGroupDialog(${mergeIndex})" style="margin-left: 10px;">
+                                添加实体
+                            </button>
+                            <button class="btn-small btn-unmerge" onclick="unmergeMergeGroup(${mergeIndex})" style="margin-left: 5px;">
+                                撤销此合并
+                            </button>
+                        </div>`;
+                        lastMergeIndex = mergeIndex;
+                    }
+
+                    // 检查是否有改名
+                    const renamedName = edits.renamed_entities && edits.renamed_entities[entityName];
+                    const displayName = renamedName || entityData.final_name;
+
+                    let statusTag = '';
+                    let className = 'entity-item';
+                    if (isDeleted) {
+                        statusTag = '<span class="entity-status-tag tag-deleted">已删除</span>';
+                        className += ' deleted';
+                    } else if (isMerged) {
+                        const colorIndex = mergeIndex % 10;
+                        statusTag = `<span class="entity-status-tag tag-merged">已合并为: ${mergeInfo.final_name}</span>`;
+                        className += ` merged merged-${colorIndex}`;
+                    } else if (renamedName) {
+                        statusTag = '<span class="entity-status-tag" style="background: #9C27B0; color: white;">已改名</span>';
+                    }
+
+                    const escapedEntityName = entityName.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+                    html += `
+                        <div class="${className}" data-entity="${escapedEntityName}" data-original-name="${escapedEntityName}">
+                            <div class="entity-header">
+                                <div class="entity-header-left">
+                                    <span class="entity-name ${isDeleted ? 'deleted' : ''}">${displayName}</span>
+                                    ${statusTag}
+                                </div>
+                                <div class="entity-controls">
+                                    ${personDetailsIndex ?
+                                        `<button class="btn-small btn-details" data-action="details" data-entity="${escapedEntityName}">
+                                            详情
+                                        </button>` : ''}
+                                    ${!isDeleted && !isMerged ?
+                                        `<button class="btn-small btn-rename" data-action="rename" data-entity="${escapedEntityName}">
+                                            改名
+                                        </button>` : ''}
+                                    <input type="checkbox" class="checkbox entity-checkbox"
+                                           data-entity="${escapedEntityName}"
+                                           ${isDeleted || isMerged ? 'disabled' : ''}
+                                           onchange="updateMergeButton()">
+                                    <button class="btn-small ${isDeleted ? 'btn-restore' : 'btn-delete'}" data-action="${isDeleted ? 'restore' : 'delete'}" data-entity="${escapedEntityName}">
+                                        ${isDeleted ? '恢复' : '删除'}
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="entity-details">
+                                ${entityData.total_instances} 个实例 |
+                                ${entityData.person_ids.length} 个ID
+                            </div>
+                            <div class="entity-original">
+                                原始名称: ${entityData.original_names.join(', ')}
+                                ${renamedName ? `<br>改名前: ${entityData.final_name}` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            html += '</div>';
+
+            document.getElementById('editor-content').innerHTML = html;
+        }
+
+        // 切换对话状态（保留/排除）
+        function toggleConversationStatus() {
+            const idx = decisions.excluded_conversations.indexOf(currentConv);
+            if (idx > -1) {
+                decisions.excluded_conversations.splice(idx, 1);
+            } else {
+                decisions.excluded_conversations.push(currentConv);
+            }
+            renderConversationList();
+            renderEntityEditor();
+            updateStats();
+            markUnsaved();
+        }
+
+        // 切换实体删除状态
+        function toggleEntityDeletion(entityName) {
+            if (!decisions.conversation_edits[currentConv]) {
+                decisions.conversation_edits[currentConv] = {
+                    excluded_entities: [],
+                    manual_merges: []
+                };
+            }
+
+            const edits = decisions.conversation_edits[currentConv];
+            const idx = edits.excluded_entities.indexOf(entityName);
+
+            if (idx > -1) {
+                edits.excluded_entities.splice(idx, 1);
+            } else {
+                edits.excluded_entities.push(entityName);
+            }
+
+            renderEntityEditor();
+            markUnsaved();
+        }
+
+        // 更新合并按钮状态
+        function updateMergeButton() {
+            const checked = document.querySelectorAll('.entity-checkbox:checked');
+            const btn = document.getElementById('merge-btn');
+            if (btn) {
+                btn.disabled = checked.length < 2;
+            }
+        }
+
+        // 打开合并对话框
+        function openMergeDialog() {
+            const checked = document.querySelectorAll('.entity-checkbox:checked');
+            if (checked.length < 2) {
+                alert('请至少选择2个实体进行合并');
+                return;
+            }
+
+            const entities = mergedData[currentConv];
+            let html = '';
+            let firstEntityName = '';
+
+            checked.forEach((checkbox, idx) => {
+                const entityName = checkbox.dataset.entity;
+                if (idx === 0) firstEntityName = entities[entityName].final_name;
+                const entity = entities[entityName];
+                html += `
+                    <div class="merge-item">
+                        <strong>${entity.final_name}</strong>
+                        (${entity.total_instances} 个实例)
+                    </div>
+                `;
+            });
+
+            document.getElementById('merge-preview').innerHTML = html;
+            document.getElementById('merge-name-input').value = firstEntityName;
+            document.getElementById('dialog-overlay').classList.add('active');
+            document.getElementById('merge-dialog').classList.add('active');
+        }
+
+        // 关闭合并对话框
+        function closeMergeDialog() {
+            document.getElementById('dialog-overlay').classList.remove('active');
+            document.getElementById('merge-dialog').classList.remove('active');
+        }
+
+        // 确认合并
+        function confirmMerge() {
+            const checked = document.querySelectorAll('.entity-checkbox:checked');
+            const mergedEntityNames = Array.from(checked).map(cb => cb.dataset.entity);
+            const finalName = document.getElementById('merge-name-input').value.trim();
+
+            if (!finalName) {
+                alert('请输入合并后的名称');
+                return;
+            }
+
+            if (!decisions.conversation_edits[currentConv]) {
+                decisions.conversation_edits[currentConv] = {
+                    excluded_entities: [],
+                    manual_merges: []
+                };
+            }
+
+            decisions.conversation_edits[currentConv].manual_merges.push({
+                final_name: finalName,
+                merged_entity_names: mergedEntityNames
+            });
+
+            closeMergeDialog();
+            renderEntityEditor();
+            markUnsaved();
+            alert(`已合并 ${mergedEntityNames.length} 个实体为: ${finalName}`);
+        }
+
+        // 撤销合并组
+        function unmergeMergeGroup(mergeIndex) {
+            if (!confirm('确定要撤销这个合并组吗？')) {
+                return;
+            }
+
+            if (!decisions.conversation_edits[currentConv]) {
+                return;
+            }
+
+            const edits = decisions.conversation_edits[currentConv];
+            if (mergeIndex >= 0 && mergeIndex < edits.manual_merges.length) {
+                const mergeInfo = edits.manual_merges[mergeIndex];
+                edits.manual_merges.splice(mergeIndex, 1);
+                renderEntityEditor();
+                markUnsaved();
+                alert(`已撤销合并: ${mergeInfo.final_name}`);
+            }
+        }
+
+        // 打开改名对话框
+        function openRenameDialog(entityName) {
+            currentRenameEntity = entityName;
+            const entities = mergedData[currentConv];
+            const entity = entities[entityName];
+
+            // 检查是否已改名
+            const edits = decisions.conversation_edits[currentConv] || { renamed_entities: {} };
+            const currentName = edits.renamed_entities[entityName] || entity.final_name;
+
+            document.getElementById('rename-current-name').textContent = currentName;
+            document.getElementById('rename-name-input').value = currentName;
+            document.getElementById('rename-overlay').classList.add('active');
+            document.getElementById('rename-dialog').classList.add('active');
+
+            // 聚焦输入框
+            setTimeout(() => {
+                document.getElementById('rename-name-input').select();
+            }, 100);
+        }
+
+        // 关闭改名对话框
+        function closeRenameDialog() {
+            document.getElementById('rename-overlay').classList.remove('active');
+            document.getElementById('rename-dialog').classList.remove('active');
+            currentRenameEntity = null;
+        }
+
+        // 确认改名
+        function confirmRename() {
+            if (!currentRenameEntity) return;
+
+            const newName = document.getElementById('rename-name-input').value.trim();
+            if (!newName) {
+                alert('请输入新名称');
+                return;
+            }
+
+            if (!decisions.conversation_edits[currentConv]) {
+                decisions.conversation_edits[currentConv] = {
+                    excluded_entities: [],
+                    manual_merges: [],
+                    renamed_entities: {}
+                };
+            }
+
+            const edits = decisions.conversation_edits[currentConv];
+            if (!edits.renamed_entities) {
+                edits.renamed_entities = {};
+            }
+
+            const entities = mergedData[currentConv];
+            const entity = entities[currentRenameEntity];
+            const oldName = edits.renamed_entities[currentRenameEntity] || entity.final_name;
+
+            // 如果新名字和原始名字相同，删除改名记录
+            if (newName === entity.final_name) {
+                delete edits.renamed_entities[currentRenameEntity];
+            } else {
+                edits.renamed_entities[currentRenameEntity] = newName;
+            }
+
+            closeRenameDialog();
+            renderEntityEditor();
+            markUnsaved();
+            alert(`已将 "${oldName}" 改名为 "${newName}"`);
+        }
+
+        // 打开添加到合并组对话框
+        function openAddToGroupDialog(mergeIndex) {
+            currentAddToGroupIndex = mergeIndex;
+
+            if (!decisions.conversation_edits[currentConv]) {
+                return;
+            }
+
+            const edits = decisions.conversation_edits[currentConv];
+            const mergeInfo = edits.manual_merges[mergeIndex];
+
+            if (!mergeInfo) {
+                return;
+            }
+
+            // 显示目标合并组信息
+            document.getElementById('add-to-group-target').textContent =
+                `合并组 #${mergeIndex + 1}: ${mergeInfo.final_name}`;
+
+            // 获取所有未删除、未合并的实体
+            const entities = mergedData[currentConv];
+            const availableEntities = [];
+
+            for (const [entityName, entityData] of Object.entries(entities)) {
+                const isDeleted = edits.excluded_entities.includes(entityName);
+
+                // 检查是否已在某个合并组中
+                const alreadyMerged = edits.manual_merges.some(m =>
+                    m.merged_entity_names.includes(entityName)
+                );
+
+                if (!isDeleted && !alreadyMerged) {
+                    availableEntities.push({ entityName, entityData });
+                }
+            }
+
+            // 渲染可选实体列表
+            let listHtml = '';
+            if (availableEntities.length === 0) {
+                listHtml = '<div style="padding: 20px; text-align: center; color: #999;">没有可添加的实体</div>';
+            } else {
+                availableEntities.forEach(({ entityName, entityData }) => {
+                    const escapedEntityName = entityName.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    listHtml += `
+                        <div style="padding: 8px; border-bottom: 1px solid #f0f0f0;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="checkbox" class="add-entity-checkbox" value="${escapedEntityName}" style="margin-right: 10px;">
+                                <div>
+                                    <strong>${entityData.final_name}</strong>
+                                    <div style="font-size: 11px; color: #999; margin-top: 2px;">
+                                        ${entityData.total_instances} 个实例 | 原始: ${entityData.original_names.join(', ')}
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('add-to-group-list').innerHTML = listHtml;
+            document.getElementById('add-to-group-overlay').classList.add('active');
+            document.getElementById('add-to-group-dialog').classList.add('active');
+        }
+
+        // 关闭添加到合并组对话框
+        function closeAddToGroupDialog() {
+            document.getElementById('add-to-group-overlay').classList.remove('active');
+            document.getElementById('add-to-group-dialog').classList.remove('active');
+            currentAddToGroupIndex = null;
+        }
+
+        // 确认添加到合并组
+        function confirmAddToGroup() {
+            if (currentAddToGroupIndex === null) return;
+
+            const checkboxes = document.querySelectorAll('.add-entity-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('请至少选择一个实体');
+                return;
+            }
+
+            const entitiesToAdd = Array.from(checkboxes).map(cb =>
+                cb.value.replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+            );
+
+            if (!decisions.conversation_edits[currentConv]) {
+                return;
+            }
+
+            const edits = decisions.conversation_edits[currentConv];
+            const mergeInfo = edits.manual_merges[currentAddToGroupIndex];
+
+            if (!mergeInfo) {
+                return;
+            }
+
+            // 添加实体到合并组
+            mergeInfo.merged_entity_names.push(...entitiesToAdd);
+
+            closeAddToGroupDialog();
+            renderEntityEditor();
+            markUnsaved();
+            alert(`已添加 ${entitiesToAdd.length} 个实体到合并组: ${mergeInfo.final_name}`);
+        }
+
+        // 更新统计
+        function updateStats() {
+            const totalConvs = Object.keys(mergedData).length;
+            const excludedCount = decisions.excluded_conversations.length;
+            const keepCount = totalConvs - excludedCount;
+
+            document.getElementById('total-convs').textContent = totalConvs;
+            document.getElementById('keep-count').textContent = keepCount;
+            document.getElementById('exclude-count').textContent = excludedCount;
+        }
+
+        // 标记为未保存
+        function markUnsaved() {
+            document.getElementById('save-status').textContent = '有未保存的更改';
+            document.getElementById('save-status').style.color = '#f44336';
+        }
+
+        // 保存决策
+        function saveDecisions() {
+            const blob = new Blob([JSON.stringify(decisions, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'conversation_entity_edits.json';
+            a.click();
+
+            document.getElementById('save-status').textContent = '已保存';
+            document.getElementById('save-status').style.color = '#4CAF50';
+
+            alert(`已保存编辑结果！\n排除对话: ${decisions.excluded_conversations.length}\n编辑对话: ${Object.keys(decisions.conversation_edits).length}`);
+        }
+
+        // 显示实体详情
+        function showEntityDetails(entityName) {
+            if (!personDetailsIndex) {
+                alert('请先加载详情索引文件 (person_details_index.json)');
+                return;
+            }
+
+            const entityData = mergedData[currentConv][entityName];
+            const personIds = entityData.person_ids;
+
+            // 收集所有关联的events, relationships, topics
+            const allEvents = [];
+            const allRelationships = [];
+            const allTopics = [];
+
+            for (const pid of personIds) {
+                const details = personDetailsIndex[pid.toString()];
+                if (details) {
+                    allEvents.push(...details.events);
+                    allRelationships.push(...details.relationships);
+                    allTopics.push(...details.topics);
+                }
+            }
+
+            // 去重
+            const uniqueEvents = Array.from(new Set(allEvents.map(e => JSON.stringify(e))))
+                .map(e => JSON.parse(e));
+            const uniqueRelationships = Array.from(new Set(allRelationships.map(r => JSON.stringify(r))))
+                .map(r => JSON.parse(r));
+            const uniqueTopics = Array.from(new Set(allTopics.map(t => JSON.stringify(t))))
+                .map(t => JSON.parse(t));
+
+            // 构建详情HTML
+            let html = `
+                <div class="details-section">
+                    <h4>基本信息</h4>
+                    <div class="detail-item">
+                        <div class="detail-item-title">实体名称</div>
+                        <div class="detail-item-content">${entityData.final_name}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-title">原始名称</div>
+                        <div class="detail-item-content">${entityData.original_names.join(', ')}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-item-title">实例数</div>
+                        <div class="detail-item-content">${entityData.total_instances} 个实例，共 ${personIds.length} 个ID</div>
+                    </div>
+                </div>
+
+                <div class="details-section">
+                    <h4>参与的事件 (${uniqueEvents.length})</h4>
+            `;
+
+            if (uniqueEvents.length === 0) {
+                html += '<div class="no-data">无相关事件</div>';
+            } else {
+                for (const event of uniqueEvents) {
+                    html += `
+                        <div class="detail-item">
+                            <div class="detail-item-title">${event.name || '未命名事件'}</div>
+                            <div class="detail-item-content">
+                                <div><strong>类型:</strong> ${event.type || '未知'}</div>
+                                <div><strong>描述:</strong> ${event.description || '无'}</div>
+                                ${event.time_description ? `<div><strong>时间:</strong> ${event.time_description}</div>` : ''}
+                                ${event.location ? `<div><strong>地点:</strong> ${event.location}</div>` : ''}
+                                ${event.participants ? `<div><strong>参与者:</strong> ${event.participants.join(', ')}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            html += `
+                </div>
+                <div class="details-section">
+                    <h4>关系 (${uniqueRelationships.length})</h4>
+            `;
+
+            if (uniqueRelationships.length === 0) {
+                html += '<div class="no-data">无相关关系</div>';
+            } else {
+                for (const rel of uniqueRelationships) {
+                    html += `
+                        <div class="detail-item">
+                            <div class="detail-item-title">${rel.type || '未知关系'}</div>
+                            <div class="detail-item-content">
+                                <div><strong>角色:</strong> ${rel.role === 'source' ? '主体' : '客体'}</div>
+                                <div><strong>相关方:</strong> ${rel.other} (${rel.other_type})</div>
+                                ${rel.context ? `<div><strong>上下文:</strong> ${rel.context}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            html += `
+                </div>
+                <div class="details-section">
+                    <h4>讨论的话题 (${uniqueTopics.length})</h4>
+            `;
+
+            if (uniqueTopics.length === 0) {
+                html += '<div class="no-data">无相关话题</div>';
+            } else {
+                for (const topic of uniqueTopics) {
+                    html += `
+                        <div class="detail-item">
+                            <div class="detail-item-title">${topic.name || '未命名话题'}</div>
+                            <div class="detail-item-content">
+                                ${topic.context ? topic.context : '无上下文'}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            html += '</div>';
+
+            // 显示对话框
+            document.getElementById('details-title').textContent = `实体详情: ${entityData.final_name}`;
+            document.getElementById('details-content').innerHTML = html;
+            document.getElementById('details-dialog').classList.add('active');
+            document.getElementById('details-overlay').style.display = 'block';
+        }
+
+        // 关闭详情对话框
+        function closeDetailsDialog() {
+            document.getElementById('details-dialog').classList.remove('active');
+            document.getElementById('details-overlay').style.display = 'none';
+        }
+
+        // 搜索
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            renderConversationList(e.target.value);
+        });
+
+        // 自动加载数据
+        function autoLoadData() {
+            const emptyHint = document.getElementById('empty-hint');
+
+            // 优先从window对象加载（通过script标签加载的数据）
+            if (window.MERGED_ENTITIES_DATA) {
+                emptyHint.textContent = '正在初始化...';
+                mergedData = window.MERGED_ENTITIES_DATA;
+                renderConversationList();
+                updateStats();
+                console.log('✓ 实体数据已加载 (来自JS文件)');
+
+                if (window.PERSON_DETAILS_DATA) {
+                    personDetailsIndex = window.PERSON_DETAILS_DATA;
+                    console.log('✓ 详情索引已加载 (来自JS文件)');
+                }
+
+                emptyHint.textContent = '← 请从左侧选择一个对话';
+                return;
+            }
+
+            // 如果没有JS数据，尝试通过HTTP加载（兼容服务器模式）
+            if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+                loadDataViaHTTP();
+            } else {
+                // 通过file://访问但没有JS数据文件
+                emptyHint.textContent = '数据文件未找到。请运行: python convert_json_to_js.py';
+            }
+        }
+
+        // 通过HTTP加载数据（服务器模式）
+        async function loadDataViaHTTP() {
+            const emptyHint = document.getElementById('empty-hint');
+            let dataLoaded = false;
+
+            try {
+                emptyHint.textContent = '正在加载实体数据...';
+                const response1 = await fetch('merged_entities_by_conversation.json');
+                if (response1.ok) {
+                    mergedData = await response1.json();
+                    renderConversationList();
+                    updateStats();
+                    console.log('✓ 实体数据加载成功 (HTTP)');
+                    dataLoaded = true;
+                }
+            } catch (error) {
+                console.log('实体数据加载失败，请手动选择文件');
+                emptyHint.textContent = '数据加载失败，请点击上方"📁 加载实体数据"手动选择文件';
+                return;
+            }
+
+            if (dataLoaded) {
+                try {
+                    emptyHint.textContent = '正在加载详情索引...';
+                    const response2 = await fetch('person_details_index.json');
+                    if (response2.ok) {
+                        personDetailsIndex = await response2.json();
+                        console.log('✓ 详情索引加载成功 (HTTP)');
+                        emptyHint.textContent = '← 请从左侧选择一个对话';
+                        if (currentConv) {
+                            renderEntityEditor();
+                        }
+                    }
+                } catch (error) {
+                    console.log('详情索引加载失败（可选）');
+                    emptyHint.textContent = '← 请从左侧选择对话开始编辑';
+                }
+            }
+        }
+
+        // 设置全局事件委托（处理动态生成的按钮）
+        // 在 editor-content 上设置事件委托
+        document.getElementById('editor-content').addEventListener('click', function(e) {
+            const target = e.target.closest('[data-action]');
+            if (!target) return;
+
+            const action = target.dataset.action;
+            const entityName = target.dataset.entity.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+
+            if (action === 'details') {
+                showEntityDetails(entityName);
+            } else if (action === 'rename') {
+                openRenameDialog(entityName);
+            } else if (action === 'delete') {
+                toggleEntityDeletion(entityName);
+            } else if (action === 'restore') {
+                toggleEntityDeletion(entityName);
+            }
+        });
+
+        // 初始化
+        autoLoadData();
+    </script>
+</body>
+</html>
