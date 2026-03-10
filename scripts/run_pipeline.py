@@ -39,6 +39,7 @@ sys.path.insert(0, str(project_root))
 
 from config.loader import load_config
 from pipeline.data_cleaning import DataCleaningPipeline
+from pipeline.embedding import EmbeddingPipeline
 
 
 class PipelineOrchestrator:
@@ -126,10 +127,20 @@ class PipelineOrchestrator:
         return stats
 
     def _run_embedding(self, resume: bool = True, **kwargs):
-        """执行向量生成（待实现）"""
-        print("⚠️  Embedding Pipeline 暂未实现")
-        print("请使用现有脚本: python scripts/generate_embeddings.py")
-        return {}
+        """执行向量生成"""
+        from pipeline.embedding import EmbeddingPipeline
+
+        pipeline = EmbeddingPipeline(
+            config=self.config,
+            checkpoint_dir=self.checkpoint_dir,
+            **kwargs
+        )
+        pipeline.run(resume=resume)
+
+        return {
+            'status': 'completed',
+            'vectors_generated': len(pipeline.vector_store.metadata) if hasattr(pipeline, 'vector_store') else 0
+        }
 
     def _run_knowledge_extraction(self, resume: bool = True, **kwargs):
         """执行知识抽取（待实现）"""

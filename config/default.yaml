@@ -40,6 +40,9 @@ paths:
   # 输入数据路径
   input_data: data/conversations/chat_data_filtered/
 
+  # 清洗后数据路径
+  cleaned_data: data/conversations/cleaned/
+
   # 向量库路径
   vector_stores: vector_stores/
   vector_stores_conversations: vector_stores/conversations/
