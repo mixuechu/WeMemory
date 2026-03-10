@@ -18,6 +18,10 @@
 credentials.json
 service-account*.json
 
+# 用户自定义配置
+config/user.yaml
+config/*.local.yaml
+
 # ============ 用户数据 ============
 # 原始聊天记录（包含个人隐私）
 chat_data_filtered/

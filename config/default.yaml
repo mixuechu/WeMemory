@@ -1,0 +1,279 @@
+# ============================================================
+# WeMemory 默认配置文件
+# ============================================================
+#
+# 本配置文件使用 YAML 格式，支持环境变量替换。
+# 使用方式：${VARIABLE_NAME} 会被替换为对应的环境变量值
+#
+# 示例：
+#   project_id: ${GOOGLE_CLOUD_PROJECT}
+#   会被替换为环境变量 GOOGLE_CLOUD_PROJECT 的值
+#
+# ============================================================
+
+# ============ Google Vertex AI 配置 ============
+vertex_ai:
+  # Google Cloud 项目配置
+  project_id: ${GOOGLE_CLOUD_PROJECT}
+  region: us-central1
+
+  # Embedding 模型配置
+  embedding:
+    model: text-multilingual-embedding-002
+    dimensions: 768
+    task_type: RETRIEVAL_DOCUMENT
+    batch_size: 32
+    max_retries: 3
+    timeout_seconds: 30
+
+  # 知识抽取模型配置（使用 Claude）
+  extraction:
+    model: claude-3-5-sonnet-20241022
+    max_tokens: 8192
+    temperature: 0.0
+    batch_size: 10
+    max_retries: 3
+    timeout_seconds: 60
+
+# ============ 数据路径配置 ============
+paths:
+  # 输入数据路径
+  input_data: data/conversations/chat_data_filtered/
+
+  # 向量库路径
+  vector_stores: vector_stores/
+  vector_stores_conversations: vector_stores/conversations/
+  vector_stores_triplets: vector_stores/triplets/
+
+  # 知识图谱路径
+  knowledge_graph: data/knowledge_graph/
+  knowledge_graph_curated: data/knowledge_graph/curated_kg.json
+  knowledge_graph_triplets: data/knowledge_graph/triplets.json
+  knowledge_graph_entity_alias: data/knowledge_graph/entity_alias_map.json
+
+  # 检查点和日志路径
+  checkpoints: .checkpoints/
+  logs: logs/
+
+  # 临时文件路径
+  temp: temp/
+
+# ============ Pipeline 配置 ============
+pipeline:
+  # 数据清洗配置
+  data_cleaning:
+    # 最小消息数量（少于此数量的对话会被过滤）
+    min_messages: 3
+
+    # 最大时间间隔（分钟）- 超过此间隔会分割对话
+    max_time_gap_minutes: 30
+
+    # 过滤的消息类型（系统消息等）
+    filter_message_types:
+      - 80  # 系统消息
+
+    # 是否去重
+    remove_duplicates: true
+
+    # 质量评估阈值
+    quality_threshold: 0.5
+
+  # Embedding 生成配置
+  embedding:
+    # 批量处理大小
+    batch_size: 32
+
+    # 重试次数
+    retry_attempts: 3
+
+    # 重试延迟（秒）
+    retry_delay: 2
+
+    # 内容/上下文权重
+    content_weight: 0.85
+    context_weight: 0.15
+
+    # 是否保存中间结果
+    save_intermediate: true
+
+    # 检查点间隔（处理多少条后保存）
+    checkpoint_interval: 100
+
+  # 知识抽取配置
+  knowledge_extraction:
+    # 批量处理大小
+    batch_size: 10
+
+    # 置信度阈值
+    confidence_threshold: 0.8
+
+    # 重试次数
+    retry_attempts: 3
+
+    # 是否保存中间结果
+    save_intermediate: true
+
+    # 检查点间隔
+    checkpoint_interval: 50
+
+    # 抽取的实体类型
+    entity_types:
+      - 人物
+      - 地点
+      - 组织
+      - 时间
+      - 事件
+
+  # 知识图谱构建配置
+  graph_building:
+    # 是否剪枝关系
+    prune_relations: true
+
+    # 有价值的关系类型（不会被剪枝）
+    valuable_relations:
+      - 家庭成员
+      - 配偶
+      - 父母
+      - 子女
+      - 同事
+      - 上级
+      - 下属
+      - 朋友
+      - 同学
+      - 老师
+      - 学生
+      - 居住地
+      - 工作地
+      - 就读
+      - 就职
+
+    # 关系剪枝阈值（置信度低于此值的关系会被删除）
+    relation_confidence_threshold: 0.7
+
+    # 是否生成三元组向量
+    generate_triplet_embeddings: true
+
+# ============ API 配置 ============
+api:
+  # 服务器配置
+  host: 0.0.0.0
+  port: 8000
+
+  # 是否启用热重载（开发模式）
+  reload: false
+
+  # 工作进程数（生产模式）
+  workers: 1
+
+  # 日志级别
+  log_level: info
+
+  # CORS 配置
+  cors:
+    enabled: true
+    origins:
+      - http://localhost:3000
+      - http://localhost:8000
+    methods:
+      - GET
+      - POST
+    headers:
+      - "*"
+
+  # 搜索配置
+  search:
+    # 默认返回结果数
+    default_top_k: 5
+
+    # 最大返回结果数
+    max_top_k: 20
+
+    # 混合搜索配置
+    hybrid_search:
+      enabled: true
+      vector_weight: 0.5
+      bm25_weight: 0.5
+
+    # 知识图谱搜索配置
+    knowledge_graph:
+      enabled: true
+      max_hops: 2
+      min_relevance: 0.6
+
+# ============ 日志配置 ============
+logging:
+  # 日志级别：DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: INFO
+
+  # 日志格式
+  format: "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s"
+
+  # 日期格式
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+  # 日志文件配置
+  file:
+    enabled: true
+    path: logs/wememory.log
+    max_bytes: 10485760  # 10MB
+    backup_count: 5
+
+  # 控制台输出
+  console:
+    enabled: true
+    color: true
+
+# ============ 性能配置 ============
+performance:
+  # 内存限制（MB）
+  max_memory_mb: 4096
+
+  # 是否启用缓存
+  enable_cache: true
+
+  # 缓存配置
+  cache:
+    # 缓存类型：memory, redis
+    type: memory
+
+    # LRU 缓存大小
+    max_size: 1000
+
+    # 缓存过期时间（秒）
+    ttl: 3600
+
+  # 并发配置
+  concurrency:
+    # 最大并发请求数
+    max_concurrent_requests: 10
+
+    # 最大并发 API 调用数
+    max_concurrent_api_calls: 5
+
+# ============ 安全配置 ============
+security:
+  # 是否启用 API 认证
+  enable_auth: false
+
+  # API Key（如果启用认证）
+  # 如果不启用认证，可以不设置此环境变量
+  api_key: ${WEMEMORY_API_KEY:}
+
+  # 是否启用限流
+  enable_rate_limiting: false
+
+  # 限流配置
+  rate_limiting:
+    requests_per_minute: 60
+    requests_per_hour: 1000
+
+# ============ 开发配置 ============
+development:
+  # 是否为开发模式
+  debug: false
+
+  # 是否启用性能分析
+  profiling: false
+
+  # 是否打印详细日志
+  verbose: false
