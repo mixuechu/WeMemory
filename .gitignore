@@ -115,6 +115,9 @@ dist/
 scripts/deprecated/
 docs/archive/
 
+# Module-level archive directories (experimental/old code)
+*/archive/
+
 # 测试输出
 test_output/
 *.txt
@@ -124,21 +127,9 @@ test_output/
 # 如果需要提供示例，创建单独的 examples/ 目录
 # examples/ 中可以放少量脱敏的示例数据
 
-# ============ 全量数据备份（不上传）============
-# 全量数据备份（~17GB，仅本地保留）
-archive/full_data_backup/
-
-# ============ 归档目录（部分忽略）============
-# 临时输出（日志、中间结果）
-archive/temp_outputs/logs/
-archive/temp_outputs/intermediate/
-
-# HTML版本文件（太大）
-archive/temp_outputs/html_versions/*.html
-
-# ============ 精简版工作区备份（已归档）============
-# 精简版数据已提升到生产环境，原目录已归档到 archive/
-archive/wechat_memory_curated_backup/
+# ============ Archive directories ============
+# Top-level archive (all archived content stays local)
+archive/
 
 # ============ 知识图谱大文件 ============
 knowledge_graph/person_*.json
