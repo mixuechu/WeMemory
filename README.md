@@ -83,6 +83,52 @@ WeMemory 是一个完整的个人记忆系统构建方案，展示了如何从�
 
 [API 文档](api/README.md)
 
+### 6️⃣ AI数字人 (PersonaAgent) ⭐ NEW
+
+- 🤖 **AI人格克隆**：基于真实聊天记录创建AI数字人，无需微调模型
+- 💬 **Few-shot Learning**：检索真实对话作为样本，让LLM学习对话风格和知识
+- 🎭 **风格还原**：准确模拟用词习惯、语气、emoji使用、表达方式
+- 📱 **真实微信体验**：自动拆分多条消息（`<MSG>`分隔），符合真实聊天习惯
+
+**核心创新**：不依赖词频统计或特征提取，通过Few-shot Learning让LLM从真实对话中自然学习风格和知识，达到接近微调的效果。
+
+**使用示例**：
+
+```bash
+# 获取可用的AI数字人列表
+curl http://localhost:8000/api/persona/available
+
+# 与AI数字人对话
+curl -X POST http://localhost:8000/api/persona/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "person_name": "成都乖巧萌",
+    "user_message": "最近工作怎么样呀？",
+    "top_k": 5
+  }'
+
+# 响应示例
+{
+  "person_name": "成都乖巧萌",
+  "messages": [
+    "还那样呗",
+    "烦死了",
+    "最近好多奇奇怪怪的事"
+  ],
+  "memories_used": [...],
+  "processing_time_ms": 4582
+}
+```
+
+**技术优势**：
+- ✅ 无需微调或训练模型
+- ✅ 实时更新（新对话立即可用）
+- ✅ 成本极低（仅API调用）
+- ✅ 可解释性强（可以看到使用了哪些记忆）
+- ✅ 动态风格适应（不同场景检索不同例子）
+
+[PersonaAgent 详细文档](persona/README.md)
+
 ---
 
 ## 快速开始
