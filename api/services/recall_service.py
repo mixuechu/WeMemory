@@ -47,9 +47,35 @@ class RecallService:
         self._cache: Dict[str, Any] = {}
         self._cache_ttl = 3600  # 1小时
 
+        # 构建人名 -> 记忆索引的映射（用于快速查找特定人物的对话）
+        print(f"[RecallService] 构建人名索引...")
+        self._person_to_indices = self._build_person_index()
+        print(f"[RecallService] 人名索引构建完成，共 {len(self._person_to_indices)} 个人物")
+
         load_time = time.time() - start_time
         print(f"[RecallService] 初始化完成，耗时: {load_time:.2f}秒")
         print(f"[RecallService] 向量库大小: {len(self.vector_store.metadata):,} 个记忆")
+
+    def _build_person_index(self) -> Dict[str, List[int]]:
+        """
+        构建人名 -> 记忆索引的映射
+
+        由于所有对话都是单聊（用户 + 一个好友），可以用 conversation_name 建立索引
+        这样查找特定人物的对话时，从 O(n) 降到 O(1)
+
+        Returns:
+            {person_name: [idx1, idx2, ...]}
+        """
+        person_to_indices = {}
+
+        for idx, meta in enumerate(self.vector_store.metadata):
+            conv_name = meta.get('conversation_name', '')
+            if conv_name:
+                if conv_name not in person_to_indices:
+                    person_to_indices[conv_name] = []
+                person_to_indices[conv_name].append(idx)
+
+        return person_to_indices
 
     def _get_timestamp(self, metadata: dict) -> int:
         """
@@ -90,23 +116,14 @@ class RecallService:
         """
         import numpy as np
 
-        # 1. 先过滤出该人物的所有对话索引
-        person_indices = []
-        all_metadata = self.vector_store.metadata
-
-        for idx, meta in enumerate(all_metadata):
-            conv_name = meta.get('conversation_name', '')
-            participants = meta.get('participants', [])
-
-            # 匹配该人物（conversation_name 或 participants）
-            if conv_name == person_name or person_name in participants:
-                person_indices.append(idx)
+        # 1. 从索引中快速获取该人物的所有对话索引（O(1) 查找）
+        person_indices = self._person_to_indices.get(person_name, [])
 
         if len(person_indices) == 0:
             print(f"[RecallService] 警告：未找到 {person_name} 的任何对话记忆")
             return []
 
-        print(f"[RecallService] 找到 {len(person_indices)} 条 {person_name} 的对话记忆")
+        print(f"[RecallService] 从索引中找到 {len(person_indices)} 条 {person_name} 的对话记忆")
 
         # 2. 生成查询向量
         query_embedding = self.embedding_client.get_embeddings([context])[0]
@@ -114,6 +131,7 @@ class RecallService:
         # 3. 在该人物的对话中计算相似度
         similarities = []
         content_embeddings = self.vector_store.content_embeddings
+        all_metadata = self.vector_store.metadata
 
         for idx in person_indices:
             # 计算余弦相似度
