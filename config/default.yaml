@@ -26,10 +26,10 @@ vertex_ai:
     max_retries: 3
     timeout_seconds: 30
 
-  # 知识抽取模型配置（使用 Claude）
+  # 知识抽取模型配置（使用 Gemini）
   extraction:
-    model: claude-3-5-sonnet-20241022
-    max_tokens: 8192
+    model: gemini-2.5-flash
+    max_tokens: 16000
     temperature: 0.0
     batch_size: 10
     max_retries: 3

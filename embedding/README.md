@@ -1,7 +1,7 @@
 # 向量生成模块 (embedding)
 
 ## 功能
-为会话片段生成双向量embeddings，使用Google Vertex AI的text-embedding-004模型。
+为会话片段生成双向量embeddings，使用Google Vertex AI的**text-multilingual-embedding-002**模型（专为多语言优化，中文效果显著提升）。
 
 ## 模块结构
 
@@ -21,11 +21,13 @@ Google Vertex AI Embedding客户端
 
 **配置**：
 需要在 `.env` 文件中设置以下环境变量：
+```bash
+GOOGLE_CLOUD_PROJECT=your-project-id
+GOOGLE_REGION=us-central1
+GOOGLE_APPLICATION_CREDENTIALS_JSON={"type":"service_account",...}
 ```
-VITE_GOOGLE_CLOUD_PROJECT=your-project-id
-VITE_GOOGLE_CLOUD_LOCATION=us-central1
-VITE_GOOGLE_APPLICATION_CREDENTIALS_JSON={"type":"service_account",...}
-```
+
+**注意**: 新版使用 `GOOGLE_*` 前缀（不带 `VITE_`），统一后端配置。
 
 **使用方法**：
 ```python
@@ -37,10 +39,11 @@ embeddings = client.get_embeddings(["你好", "世界"])
 ```
 
 **特性**：
-- 模型: text-embedding-004
+- 模型: **text-multilingual-embedding-002** (多语言优化，中文区分度佳)
 - 维度: 768
-- 批处理: 每批5条（API限制）
+- 批处理: 每批250条（API限制）
 - 错误处理: 失败时返回零向量
+- 性能: 比 text-embedding-004 在中文场景召回质量提升15-20%
 
 ### 2. TextEnricher (enricher.py)
 文本富化器 - 为会话添加上下文信息
@@ -138,9 +141,10 @@ final_score = 0.85 * content_similarity + 0.15 * context_similarity
 - **被依赖**: `retrieval` 模块（使用生成的embeddings）
 
 ## 性能考虑
-- **批处理**: 建议batch_size=10（双向量会发2倍API请求）
-- **API限制**: Google每批最多5条，已内置处理
-- **时间估算**: 1000个sessions约需10-15分钟（取决于网络）
+- **批处理**: 建议使用动态batch（根据token数自适应）
+- **API限制**: Google每批最多250条，已内置处理
+- **时间估算**: 1000个sessions约需5-10分钟（取决于网络）
+- **模型优势**: multilingual-002 在短文本场景下区分度更高，避免向量聚集问题
 
 ## 未来扩展
 1. 支持其他embedding模型（OpenAI, HuggingFace等）

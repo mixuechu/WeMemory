@@ -1,419 +1,325 @@
 # WeMemory 脚本工具
 
-本目录包含 WeMemory 项目的实用脚本工具。
+本目录包含 WeMemory 项目的核心脚本工具。
 
 ---
 
 ## 核心脚本
 
-### 1. run_pipeline.py
+### run_pipeline.py - Pipeline 统一入口 ⭐
 
-**功能**: Pipeline 主控脚本，执行端到端数据处理流程
-
-**支持的步骤**:
-- `data_cleaning` - 数据清洗
-- `embedding` - 向量生成
-- `knowledge_extraction` - 知识抽取
-- `graph_building` - 图谱构建
+**功能**: WeMemory 端到端数据处理的统一入口脚本。
 
 **使用方法**:
-```bash
-# 执行特定步骤
-python scripts/run_pipeline.py --step data_cleaning
 
-# 执行全流程
+```bash
+# 运行完整流程（4个步骤）
 python scripts/run_pipeline.py --all
 
 # 从头开始（清除检查点）
-python scripts/run_pipeline.py --step data_cleaning --fresh
+python scripts/run_pipeline.py --all --fresh
 
-# 查看当前进度
+# 运行单个步骤
+python scripts/run_pipeline.py --step data_cleaning
+python scripts/run_pipeline.py --step embedding
+python scripts/run_pipeline.py --step knowledge_extraction
+python scripts/run_pipeline.py --step graph_building
+
+# 使用自定义配置
+python scripts/run_pipeline.py --all --config my_config.yaml
+
+# 查看检查点状态
 python scripts/run_pipeline.py --status
 
 # 清除所有检查点
 python scripts/run_pipeline.py --clear
 ```
 
-**详细文档**: [pipeline/README.md](../pipeline/README.md)
+**Pipeline 步骤**:
+
+1. **data_cleaning**: 清洗对话数据
+   - 输入: `data/conversations/chat_data_filtered/`
+   - 输出: `data/conversations/cleaned/`
+
+2. **embedding**: 生成双向量 embeddings
+   - 输入: `data/conversations/cleaned/`
+   - 输出: `vector_stores/conversations/`
+
+3. **knowledge_extraction**: 使用 Gemini 抽取知识图谱
+   - 输入: `data/conversations/cleaned/`
+   - 输出: `data/knowledge_graph/curated_kg.json`
+
+4. **graph_building**: 构建三元组向量索引
+   - 输入: `data/knowledge_graph/curated_kg.json`
+   - 输出: `data/knowledge_graph/triplets.json` + `vector_stores/triplets/`
+
+**特性**:
+- ✅ 支持断点续传（自动保存检查点）
+- ✅ 实时进度显示
+- ✅ 详细统计信息
+- ✅ 错误处理和重试机制
+
+**详细文档**: [Pipeline 模块](../pipeline/README.md)
 
 ---
 
-### 2. validate_chatlab_format.py
+## 其他脚本
 
-**功能**: 验证 ChatLab 格式的对话数据
+### （未来扩展）
 
-**使用方法**:
-```bash
-# 验证单个文件
-python scripts/validate_chatlab_format.py data/conversations/chat_data_filtered/张三.json
-
-# 验证整个目录
-python scripts/validate_chatlab_format.py data/conversations/chat_data_filtered/
-
-# 静默模式（只输出错误）
-python scripts/validate_chatlab_format.py data/ --quiet
-```
-
-**检查项目**:
-- JSON 格式正确性
-- 必需字段完整性
-- 时间戳格式
-- 消息类型有效性
-- 发送者信息
-
-**详细说明**: [examples/data_samples/README.md](../examples/data_samples/README.md)
+- `export_data.py` - 数据导出工具
+- `validate_data.py` - 数据验证工具
+- `benchmark.py` - 性能基准测试
 
 ---
 
-### 3. validate_config.py
+## 使用示例
 
-**功能**: 验证配置文件和环境变量
-
-**使用方法**:
-```bash
-# 基本验证
-python scripts/validate_config.py
-
-# 包含 API 连接测试
-python scripts/validate_config.py --check-api
-```
-
-**检查项目**:
-- 环境变量设置
-- 配置文件结构
-- 必需路径存在
-- Google Cloud 配置（可选）
-- API 连接测试（可选）
-
-**详细文档**: [config/README.md](../config/README.md)
-
----
-
-### 4. clean_conversation.py
-
-**功能**: 清洗对话数据
-
-**使用方法**:
-```bash
-# 清洗单个文件
-python scripts/clean_conversation.py \
-    --input data/conversations/raw/张三.json \
-    --output data/conversations/cleaned/张三.json
-
-# 批量清洗目录
-python scripts/clean_conversation.py \
-    --input data/conversations/raw/ \
-    --output data/conversations/cleaned/
-
-# 使用自定义配置
-python scripts/clean_conversation.py \
-    --input data/conversations/raw/ \
-    --output data/conversations/cleaned/ \
-    --config config/custom.yaml
-```
-
-**清洗策略**:
-1. 移除系统消息
-2. 去除重复消息
-3. 分割长会话
-4. 质量评分过滤
-5. 最小消息数过滤
-
-**详细文档**: [docs/data-cleaning.md](../docs/data-cleaning.md)
-
----
-
-### 5. evaluate_data_quality.py
-
-**功能**: 评估对话数据质量
-
-**使用方法**:
-```bash
-# 评估单个文件
-python scripts/evaluate_data_quality.py data/conversations/cleaned/张三.json
-
-# 评估整个目录
-python scripts/evaluate_data_quality.py data/conversations/cleaned/
-
-# 对比清洗前后
-python scripts/evaluate_data_quality.py \
-    data/conversations/cleaned/ \
-    --before data/conversations/raw/
-```
-
-**评估维度**:
-- 平均消息长度
-- 发送者多样性
-- 时间跨度
-- 内容比率（文本 vs 系统消息）
-- 综合质量分（0-1）
-
-**详细说明**: [docs/data-cleaning.md](../docs/data-cleaning.md)
-
----
-
-### 6. start_api.py
-
-**功能**: 启动 WeMemory API 服务
-
-**使用方法**:
-```bash
-# 默认启动（localhost:8000）
-python scripts/start_api.py
-
-# 自定义端口
-python scripts/start_api.py --port 8080
-
-# 生产模式
-python scripts/start_api.py --host 0.0.0.0 --port 8000
-
-# 启用热重载（开发模式）
-python scripts/start_api.py --reload
-```
-
-**预检查项**:
-- 向量库文件存在
-- 配置文件有效
-- 环境变量设置
-
-**详细文档**: [docs/api-service.md](../docs/api-service.md)
-
----
-
-### 7. generate_embeddings.py
-
-**功能**: 生成对话向量库
-
-**使用方法**:
-```bash
-# 使用默认配置
-python scripts/generate_embeddings.py
-
-# 指定输入/输出目录
-python scripts/generate_embeddings.py \
-    --input data/conversations/cleaned/ \
-    --output vector_stores/conversations/
-```
-
-**说明**: 此脚本是早期版本，建议使用新的 Pipeline 系统：
+### 完整流程示例
 
 ```bash
-# 推荐使用 Pipeline
-python scripts/run_pipeline.py --step embedding
+# 1. 准备数据
+# 将 WeChat 导出的 JSON 文件放到 data/conversations/chat_data_filtered/
+
+# 2. 配置环境变量
+# 编辑 .env 文件，设置 Google Cloud 凭证
+
+# 3. 运行完整 Pipeline
+python scripts/run_pipeline.py --all
+
+# 4. 等待处理完成（约15-20分钟）
+# 查看输出统计信息
+
+# 5. 启动 API 服务
+python api/main.py
 ```
 
-**详细文档**: [docs/embedding.md](../docs/embedding.md)
-
----
-
-## 辅助脚本
-
-### start_embedding.bat
-
-Windows 批处理脚本，用于快速启动 embedding 生成。
-
-**使用方法**:
-```batch
-# Windows 命令行
-start_embedding.bat
-```
-
----
-
-## 脚本开发指南
-
-### 创建新脚本
-
-1. 在 `scripts/` 目录创建脚本文件
-2. 添加 shebang: `#!/usr/bin/env python3`
-3. 使用 argparse 处理命令行参数
-4. 添加详细的帮助信息
-5. 使用项目配置系统（`config.loader`）
-
-**示例**:
-```python
-#!/usr/bin/env python3
-"""
-我的新脚本
-
-功能说明...
-"""
-import sys
-import argparse
-from pathlib import Path
-
-# 添加项目根目录到路径
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
-
-from config.loader import load_config
-
-def main():
-    parser = argparse.ArgumentParser(
-        description='我的新脚本',
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-
-    parser.add_argument(
-        '--input',
-        type=str,
-        required=True,
-        help='输入文件或目录'
-    )
-
-    args = parser.parse_args()
-
-    # 加载配置
-    config = load_config()
-
-    # 脚本逻辑...
-
-if __name__ == '__main__':
-    main()
-```
-
-### 使脚本可执行
+### 增量更新示例
 
 ```bash
-# Linux/Mac
-chmod +x scripts/my_script.py
+# 1. 添加新的对话文件到 data/conversations/chat_data_filtered/
 
-# Windows
-# 不需要特殊权限
-```
-
----
-
-## 常用工作流
-
-### 从零开始
-
-```bash
-# 1. 验证配置
-python scripts/validate_config.py
-
-# 2. 验证数据格式
-python scripts/validate_chatlab_format.py data/conversations/chat_data_filtered/
-
-# 3. 数据清洗
-python scripts/run_pipeline.py --step data_cleaning
-
-# 4. 生成向量库
+# 2. 只运行 embedding 步骤（会自动跳过已处理的文件）
 python scripts/run_pipeline.py --step embedding
 
-# 5. 启动 API
-python scripts/start_api.py
+# 3. 更新知识图谱
+python scripts/run_pipeline.py --step knowledge_extraction
+python scripts/run_pipeline.py --step graph_building
 ```
 
-### 数据质量评估
+### 错误恢复示例
 
 ```bash
-# 评估原始数据
-python scripts/evaluate_data_quality.py data/conversations/raw/
+# 1. Pipeline 中断或出错后，直接重新运行
+python scripts/run_pipeline.py --all
+# 会自动从检查点继续，跳过已成功的文件
 
-# 清洗数据
-python scripts/clean_conversation.py \
-    --input data/conversations/raw/ \
-    --output data/conversations/cleaned/
-
-# 对比清洗效果
-python scripts/evaluate_data_quality.py \
-    data/conversations/cleaned/ \
-    --before data/conversations/raw/
+# 2. 如果需要重新处理某个步骤
+python scripts/run_pipeline.py --step embedding --fresh
+# --fresh 会清除该步骤的检查点，从头开始
 ```
 
-### 增量更新
+---
+
+## 检查点管理
+
+### 检查点位置
+
+检查点保存在 `.checkpoints/` 目录：
+
+```
+.checkpoints/
+├── data_cleaning.json
+├── embedding.json
+├── knowledge_extraction.json
+└── graph_building.json
+```
+
+### 检查点格式
+
+```json
+{
+  "processed_items": ["file1.json", "file2.json"],
+  "stats": {
+    "total": 138,
+    "success": 136,
+    "failed": 2
+  },
+  "last_updated": "2026-03-10T14:10:06"
+}
+```
+
+### 手动清除检查点
 
 ```bash
-# 清洗新数据
-python scripts/clean_conversation.py \
-    --input data/conversations/new/ \
-    --output data/conversations/cleaned/
+# 清除所有检查点
+python scripts/run_pipeline.py --clear
 
-# 增量生成向量（从检查点恢复）
-python scripts/run_pipeline.py --step embedding
+# 或者手动删除
+rm -rf .checkpoints/
 ```
+
+---
+
+## 配置文件
+
+### 默认配置
+
+使用 `config/default.yaml` 作为默认配置。
+
+### 自定义配置
+
+创建自定义配置文件：
+
+```yaml
+# my_config.yaml
+paths:
+  input_data: my_data/conversations/
+
+vertex_ai:
+  extraction:
+    model: gemini-2.5-flash
+    max_tokens: 8192  # 使用更小的token限制
+
+pipeline:
+  embedding:
+    batch_size: 16  # 减小batch size
+```
+
+使用自定义配置：
+
+```bash
+python scripts/run_pipeline.py --all --config my_config.yaml
+```
+
+---
+
+## 环境变量要求
+
+运行脚本前需要设置以下环境变量（在 `.env` 文件中）：
+
+```bash
+# Google Cloud 配置
+GOOGLE_CLOUD_PROJECT=your-project-id
+GOOGLE_REGION=us-central1
+GOOGLE_APPLICATION_CREDENTIALS_JSON={"type":"service_account",...}
+```
+
+---
+
+## 常见问题
+
+### Q: 运行报错 "No module named 'pipeline'"
+
+A: 确保在项目根目录运行脚本：
+```bash
+cd /path/to/wechat_memory
+python scripts/run_pipeline.py --all
+```
+
+### Q: 如何查看详细日志？
+
+A: 日志自动输出到控制台，也可以重定向到文件：
+```bash
+python scripts/run_pipeline.py --all 2>&1 | tee pipeline.log
+```
+
+### Q: Pipeline 运行很慢怎么办？
+
+A:
+1. 检查网络连接（Vertex AI 需要访问 Google Cloud）
+2. 减小 batch_size（在配置文件中调整）
+3. 使用更少的数据进行测试
+
+### Q: 如何并行处理多个对话？
+
+A: Pipeline 内部已经实现了批处理，不需要手动并行。如需调整并行度，修改配置：
+```yaml
+pipeline:
+  embedding:
+    batch_size: 32  # 调整批处理大小
+```
+
+---
+
+## 性能提示
+
+### 优化建议
+
+1. **网络优化**:
+   - 使用稳定的网络连接
+   - 如在 Google Cloud VM 上运行，延迟更低
+
+2. **数据优化**:
+   - 先用小批量数据测试（10-20个对话）
+   - 确认流程正常后再处理全量数据
+
+3. **配置优化**:
+   ```yaml
+   pipeline:
+     embedding:
+       batch_size: 32  # 根据API配额调整
+     knowledge_extraction:
+       batch_size: 10  # Gemini 并发数
+   ```
 
 ---
 
 ## 故障排查
 
-### 配置问题
+### 常见错误
 
-```bash
-# 检查配置
-python scripts/validate_config.py --check-api
-```
+1. **Google Cloud 认证失败**
+   ```
+   Error: GOOGLE_APPLICATION_CREDENTIALS_JSON not found
+   ```
+   解决: 检查 `.env` 文件，确保包含正确的服务账号 JSON
 
-常见错误:
-- `GOOGLE_CLOUD_PROJECT` 未设置
-- `GOOGLE_APPLICATION_CREDENTIALS` 路径错误
-- API 权限不足
+2. **模型访问权限错误**
+   ```
+   404 Model not found
+   ```
+   解决: 确认 Google Cloud 项目已启用 Vertex AI API
 
-**解决方案**: 查看 [config/README.md](../config/README.md)
+3. **文件不存在错误**
+   ```
+   FileNotFoundError: data/conversations/chat_data_filtered/
+   ```
+   解决: 创建目录并放入对话数据文件
 
-### 数据格式问题
-
-```bash
-# 验证数据格式
-python scripts/validate_chatlab_format.py data/
-```
-
-常见错误:
-- 时间戳格式错误
-- 缺少必需字段
-- 消息类型无效
-
-**解决方案**: 查看 [examples/data_samples/README.md](../examples/data_samples/README.md)
-
-### Pipeline 错误
-
-```bash
-# 查看 Pipeline 状态
-python scripts/run_pipeline.py --status
-
-# 清除检查点重新开始
-python scripts/run_pipeline.py --step data_cleaning --fresh
-```
-
-**解决方案**: 查看 [pipeline/README.md](../pipeline/README.md)
-
-### API 启动失败
-
-```bash
-# 检查向量库
-ls -lh vector_stores/conversations/embeddings.pkl
-
-# 检查配置
-python scripts/validate_config.py
-```
-
-常见错误:
-- 向量库文件不存在
-- 端口被占用
-- 内存不足
-
-**解决方案**: 查看 [docs/api-service.md](../docs/api-service.md)
+4. **内存不足**
+   ```
+   MemoryError
+   ```
+   解决: 减小 batch_size 或分批处理数据
 
 ---
 
-## 参考文档
+## 开发指南
 
-### 系统文档
-- [快速开始](../docs/quickstart.md)
-- [配置系统](../config/README.md)
-- [Pipeline 框架](../pipeline/README.md)
+### 添加新脚本
 
-### 功能文档
-- [数据导出](../docs/data-export.md)
-- [数据清洗](../docs/data-cleaning.md)
-- [Embedding 生成](../docs/embedding.md)
-- [API 服务](../docs/api-service.md)
+1. 在 `scripts/` 目录创建新脚本
+2. 添加 shebang 和编码声明:
+   ```python
+   #!/usr/bin/env python3
+   # -*- coding: utf-8 -*-
+   ```
+3. 添加文档字符串说明用途
+4. 更新本 README
 
-### 示例代码
-- [使用示例](../examples/README.md)
-- [数据样例](../examples/data_samples/README.md)
+### 脚本规范
+
+- ✅ 使用 argparse 处理命令行参数
+- ✅ 添加 `--help` 说明
+- ✅ 使用 logging 输出日志
+- ✅ 处理异常并返回合适的退出码
+- ✅ 提供使用示例
 
 ---
 
-返回 [主文档](../README.md)
+## 相关文档
+
+- [Pipeline 模块](../pipeline/README.md) - 详细的 Pipeline 说明
+- [配置系统](../config/README.md) - 配置文件说明
+- [快速开始](../docs/quickstart.md) - 完整的快速开始指南

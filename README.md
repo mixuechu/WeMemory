@@ -112,21 +112,40 @@ cp .env.example .env
 
 #### 1. 导出微信数据
 
-使用 [WeFlow](https://github.com/hicccc77/WeFlow) 导出聊天记录为 JSON 格式。
+使用 [WeFlow](https://github.com/hicccc77/WeFlow) 导出聊天记录为 JSON 格式，放到 `data/conversations/chat_data_filtered/`。
 
 [详细教程](docs/data-export.md)
 
-#### 2. 生成向量库
+#### 2. 配置环境变量
+
+编辑 `.env` 文件，配置 Google Cloud 凭证：
 
 ```bash
-# 生成对话向量库
-python scripts/generate_embeddings.py --data data/conversations/
-
-# 生成知识图谱三元组向量
-python knowledge_graph/embedding_generator.py
+GOOGLE_CLOUD_PROJECT=your-project-id
+GOOGLE_REGION=us-central1
+GOOGLE_APPLICATION_CREDENTIALS_JSON={"type":"service_account",...}
 ```
 
-#### 3. 启动 API 服务
+#### 3. 运行完整 Pipeline
+
+```bash
+# 一键运行完整流程（数据清洗 → Embedding → 知识抽取 → 图谱构建）
+python scripts/run_pipeline.py --all
+
+# 或者单独运行某个步骤
+python scripts/run_pipeline.py --step embedding
+python scripts/run_pipeline.py --step knowledge_extraction
+python scripts/run_pipeline.py --step graph_building
+```
+
+Pipeline 会自动：
+- ✅ 清洗对话数据（去重、过滤系统消息）
+- ✅ 生成双向量 embeddings（内容85% + 上下文15%）
+- ✅ 使用 Gemini 2.5 Flash 抽取知识图谱
+- ✅ 生成三元组并构建 FAISS 索引
+- ✅ 支持断点续传（--fresh 清除检查点重新开始）
+
+#### 4. 启动 API 服务
 
 ```bash
 # 启动 FastAPI 服务
@@ -207,11 +226,12 @@ for item in results["memories"]:
 | 组件 | 技术选型 | 说明 |
 |------|---------|------|
 | **数据导出** | [WeFlow](https://github.com/hicccc77/WeFlow) | 微信聊天记录导出工具 |
-| **Embedding** | Google Vertex AI | text-multilingual-embedding-002 |
-| **向量索引** | FAISS | Facebook AI 开源向量搜索库 |
+| **Embedding** | Google Vertex AI | text-multilingual-embedding-002 (768维) |
+| **向量索引** | FAISS | HNSW 索引，100-400x 加速 |
 | **关键词检索** | BM25 | 基于 rank-bm25 实现 |
-| **知识抽取** | Claude API | 自然语言三元组提取 |
+| **知识抽取** | Gemini 2.5 Flash | 自然语言三元组提取 |
 | **API 框架** | FastAPI | 高性能异步 Web 框架 |
+| **Pipeline** | 自研框架 | 支持断点续传、检查点恢复 |
 
 ---
 
@@ -280,29 +300,43 @@ for item in results["memories"]:
 
 ```
 WeMemory/
-├── api/                      # FastAPI 服务
-│   ├── main.py              # 服务入口
-│   ├── routers/             # API 路由
-│   └── services/            # 业务逻辑
-├── data/                    # 生产数据（不上传 Git）
-│   ├── conversations/       # 138 个精选对话
-│   └── knowledge_graph/     # 知识图谱数据
-├── vector_stores/           # 向量库（不上传 Git）
-│   ├── triplets/           # 三元组向量
-│   └── conversations/      # 对话向量
-├── knowledge_graph/         # 知识图谱模块
-│   ├── triplet_builder.py  # 三元组构建
-│   └── embedding_generator.py # 向量生成
-├── embedding/               # Embedding 模块
-│   ├── client.py           # Vertex AI 客户端
-│   └── generator.py        # 向量生成器
-├── retrieval/               # 检索模块
-│   ├── vector_store.py     # 向量存储
-│   └── hybrid.py           # 混合检索
-├── data_loader/             # 数据加载模块
-├── tests/                   # 测试套件
-├── docs/                    # 完整文档
-└── examples/                # 使用示例
+├── pipeline/                    # 核心 Pipeline 框架 ⭐
+│   ├── base.py                 # Pipeline 基类
+│   ├── data_cleaning.py        # 数据清洗
+│   ├── embedding.py            # 向量生成
+│   ├── knowledge_extraction.py # 知识抽取（Gemini）
+│   └── graph_building.py       # 三元组构建
+├── config/                      # 配置系统 ⭐
+│   ├── default.yaml            # 默认配置
+│   └── loader.py               # 配置加载器
+├── scripts/                     # 脚本工具 ⭐
+│   └── run_pipeline.py         # Pipeline 统一入口
+├── api/                        # FastAPI 服务
+│   ├── main.py                 # 服务入口
+│   ├── routers/                # API 路由
+│   └── services/               # 业务逻辑
+├── embedding/                  # Embedding 模块
+│   ├── client.py              # Vertex AI 客户端
+│   ├── generator.py           # 双向量生成器
+│   └── session_builder.py     # 会话构建
+├── knowledge_graph/            # 知识图谱模块
+│   ├── triplet_builder.py     # 三元组构建
+│   └── embedding_generator.py # 三元组向量化
+├── retrieval/                  # 检索模块
+│   ├── vector_store.py        # 向量存储（FAISS + BM25）
+│   └── hybrid.py              # 混合检索
+├── data_loader/                # 数据加载模块
+│   ├── parser.py              # WeChat 格式解析
+│   └── cleaner.py             # 数据清洗
+├── data/                       # 生产数据（.gitignore）
+│   ├── conversations/         # 对话数据
+│   └── knowledge_graph/       # 知识图谱
+├── vector_stores/              # 向量库（.gitignore）
+│   ├── conversations/         # 对话向量
+│   └── triplets/              # 三元组向量
+├── tests/                      # 测试套件
+├── examples/                   # 使用示例
+└── docs/                       # 完整文档
 ```
 
 ---

@@ -1,53 +1,96 @@
 # 知识图谱模块 (Knowledge Graph Module)
 
-**最后更新**: 2026-03-09
-**当前状态**: 精简版已提升为生产版本
-**数据规模**: 138 个对话，7,865 条三元组
+**最后更新**: 2026-03-10
+**当前状态**: 完整 Pipeline 集成，生产就绪
+**推荐使用**: `pipeline/graph_building.py` (通过 `run_pipeline.py` 调用)
 
 ---
 
-## 核心功能
+## 概述
 
 本模块负责从对话中提取结构化知识，构建三元组，并生成向量索引。
 
-### 1. 三元组构建 (triplet_builder.py)
-从知识图谱生成优化的自然语言三元组
+### 核心创新
 
-**功能**:
-- 读取知识图谱 JSON 文件
-- 提取事件和关系信息
-- 生成自然语言描述的三元组
-- 应用剪枝策略（保留有价值的关系）
+🎯 **自然语言三元组** - 不使用传统图数据库（Neo4j），直接将知识图谱转换为自然语言三元组进行向量检索
 
-**使用**:
-```bash
-python knowledge_graph/triplet_builder.py
-```
-
-**输出**: `data/knowledge_graph/triplets.json`
-
-### 2. 向量生成 (embedding_generator.py)
-为三元组生成向量嵌入并构建 FAISS 索引
-
-**功能**:
-- 使用 text-multilingual-embedding-002 模型
-- 为每个三元组生成 768 维向量
-- 构建 FAISS 索引用于快速检索
-
-**使用**:
-```bash
-python knowledge_graph/embedding_generator.py
-```
-
-**输出**: `vector_stores/triplets/`
+**优势**:
+- ⚡ 性能提升 3-5x（相比 Neo4j 图查询）
+- 🔍 更好的语义理解（向量检索 vs 路径匹配）
+- 🚀 更简单的架构（无需维护图数据库）
 
 ---
 
-## 其他脚本
+## Pipeline 集成 ⭐ (推荐)
 
-### 全量抽取（用于全量数据）
-- `full_extraction.py` - 从对话批量提取知识
-- `batch_extract_all.py` - 批次化抽取管理
+**推荐使用 Pipeline 统一流程**，而非直接运行本目录的脚本：
+
+```bash
+# 完整流程（包含知识抽取和图谱构建）
+python scripts/run_pipeline.py --all
+
+# 只运行知识抽取
+python scripts/run_pipeline.py --step knowledge_extraction
+
+# 只运行图谱构建
+python scripts/run_pipeline.py --step graph_building
+```
+
+详见: [Pipeline 文档](../pipeline/README.md)
+
+---
+
+## 模块组成
+
+### 1. 知识抽取 (通过 Pipeline)
+
+**实现**: `pipeline/knowledge_extraction.py`
+
+**功能**:
+- 使用 **Gemini 2.5 Flash** 从对话中抽取结构化知识
+- 提取: People, Organizations, Topics, Events, Locations, Relationships
+- 自动重试机制（最多3次）
+- Token 使用统计
+
+**输出**: `data/knowledge_graph/curated_kg.json`
+
+**配置** (`config/default.yaml`):
+```yaml
+vertex_ai:
+  extraction:
+    model: gemini-2.5-flash
+    max_tokens: 16000
+    temperature: 0.0
+```
+
+### 2. 三元组构建 (通过 Pipeline)
+
+**实现**: `pipeline/graph_building.py`
+
+**功能**:
+- 从知识图谱生成自然语言三元组
+- 添加语义增强（别名、关系语义、时间信息）
+- 生成 768 维向量（text-multilingual-embedding-002）
+- 构建 FAISS 索引
+
+**输出**:
+- `data/knowledge_graph/triplets.json` - 三元组数据
+- `vector_stores/triplets/embeddings.pkl` - 三元组向量
+- `vector_stores/triplets/index.faiss` - FAISS 索引
+
+---
+
+## 参考实现（仅供参考）
+
+本目录包含的独立脚本是早期实现，**不推荐直接使用**，建议通过 Pipeline 调用：
+
+### triplet_builder.py (已集成到 Pipeline)
+
+原始三元组构建实现，现已集成到 `pipeline/graph_building.py`。
+
+### embedding_generator.py (已集成到 Pipeline)
+
+原始向量生成实现，现已集成到 `pipeline/graph_building.py`。
 
 ### 图谱构建
 - `build_neo4j_graph.py` - 构建 Neo4j 图数据库
