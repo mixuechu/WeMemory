@@ -1,369 +1,118 @@
 # 贡献指南
 
-感谢您考虑为 WeMemory 做出贡献！我们欢迎所有形式的贡献，包括但不限于：
+## 分支管理
 
-- 🐛 报告 Bug
-- 💡 提出新功能建议
-- 📝 改进文档
-- 🔧 提交代码优化
-- ✅ 增加测试用例
+本项目采用双分支开发模式：
 
----
+### 分支说明
 
-## 行为准则
+- **`main`** - 稳定分支
+  - 包含经过测试、可直接使用的代码
+  - 所有功能都已验证通过
+  - 文档与代码保持同步
+  - 用户应该 clone 这个分支
 
-本项目遵循 [贡献者公约](https://www.contributor-covenant.org/)。参与本项目即表示您同意遵守其条款。
+- **`dev`** - 开发分支
+  - 用于日常开发和测试
+  - 包含最新的功能和改进
+  - 可能存在未完成的功能
+  - 仅供开发者使用
 
-### 基本原则
+### 开发流程
 
-- 尊重所有贡献者
-- 接受建设性批评
-- 关注对项目最有利的事情
-- 对其他社区成员表现出同理心
-
----
-
-## 如何贡献
-
-### 报告 Bug
-
-在提交 Bug 报告之前，请：
-
-1. **搜索现有 Issues**：检查是否已有人报告了相同问题
-2. **使用最新版本**：确认问题在最新版本中仍然存在
-3. **提供详细信息**：包括复现步骤、预期行为、实际行为
-
-**Bug 报告模板**：
-
-```markdown
-## Bug 描述
-清晰简洁地描述问题
-
-## 复现步骤
-1. 执行命令 '...'
-2. 查看 '...'
-3. 出现错误 '...'
-
-## 预期行为
-描述您期望发生什么
-
-## 实际行为
-描述实际发生了什么
-
-## 环境信息
-- 操作系统: [例如 macOS 13.0]
-- Python 版本: [例如 3.10.5]
-- WeMemory 版本: [例如 v1.0.0]
-
-## 日志输出
-```
-粘贴相关日志
-```
-
-## 截图（如适用）
-添加截图以帮助解释问题
-```
-
-[创建 Bug 报告](https://github.com/mixuechu/WeMemory/issues/new?template=bug_report.md)
-
-### 提出功能建议
-
-我们欢迎新功能建议！请：
-
-1. **搜索现有 Issues**：避免重复建议
-2. **描述用例**：说明为什么需要这个功能
-3. **考虑替代方案**：是否有其他解决方法
-
-**功能建议模板**：
-
-```markdown
-## 功能描述
-清晰简洁地描述您想要的功能
-
-## 动机
-解释为什么需要这个功能，它解决了什么问题
-
-## 建议的解决方案
-描述您希望如何实现这个功能
-
-## 替代方案
-描述您考虑过的其他解决方案
-
-## 附加信息
-添加任何其他相关信息或截图
-```
-
-[提出功能建议](https://github.com/mixuechu/WeMemory/issues/new?template=feature_request.md)
-
-### 改进文档
-
-文档改进包括：
-
-- 修正错别字和语法错误
-- 添加示例代码
-- 改进现有文档的清晰度
-- 翻译文档（中文/英文）
-
-**提交文档 PR**：
-
-1. Fork 仓库
-2. 在 `docs/` 目录中进行修改
-3. 提交 Pull Request
-
-### 提交代码
-
-#### 开发流程
-
-1. **Fork 仓库**
+#### 1. 日常开发
 
 ```bash
-# Fork 后克隆到本地
-git clone https://github.com/YOUR_USERNAME/WeMemory.git
-cd WeMemory
-```
+# 切换到 dev 分支
+git checkout dev
 
-2. **创建分支**
+# 拉取最新代码
+git pull origin dev
 
-```bash
-# 创建功能分支
-git checkout -b feature/your-feature-name
+# 进行开发...
+# 修改代码、测试功能
 
-# 或创建修复分支
-git checkout -b fix/your-bug-fix
-```
-
-3. **进行开发**
-
-```bash
-# 安装依赖
-pip install -r requirements.txt
-
-# 运行测试
-python -m pytest tests/
-
-# 确保代码通过测试
-```
-
-4. **提交更改**
-
-```bash
+# 提交更改
 git add .
-git commit -m "feat: add your feature description"
-
-# 提交信息格式：
-# feat: 新功能
-# fix: Bug 修复
-# docs: 文档更新
-# style: 代码格式调整
-# refactor: 代码重构
-# test: 测试相关
-# chore: 构建/工具相关
+git commit -m "feat: 添加新功能"
+git push origin dev
 ```
 
-5. **推送到 GitHub**
+#### 2. 合并到 main（发布稳定版本）
+
+当 dev 分支的功能开发完成并充分测试后：
 
 ```bash
-git push origin feature/your-feature-name
+# 切换到 main 分支
+git checkout main
+
+# 合并 dev 分支
+git merge dev
+
+# 推送到远程
+git push origin main
 ```
 
-6. **创建 Pull Request**
-
-- 访问您的 Fork 仓库
-- 点击 "Compare & pull request"
-- 填写 PR 描述
-- 提交 PR
-
-#### 代码规范
-
-**Python 代码风格**：
-
-- 遵循 [PEP 8](https://www.python.org/dev/peps/pep-0008/)
-- 使用 4 空格缩进
-- 最大行长 100 字符
-- 使用类型注解
-
-**示例**：
-
-```python
-from typing import List, Dict
-
-def search_memories(
-    query: str,
-    top_k: int = 5,
-    filters: Dict[str, any] = None
-) -> List[Dict]:
-    """
-    搜索记忆
-
-    Args:
-        query: 查询文本
-        top_k: 返回结果数量
-        filters: 过滤条件
-
-    Returns:
-        搜索结果列表
-    """
-    # 实现...
-    pass
-```
-
-**代码检查工具**：
+#### 3. 切换分支
 
 ```bash
-# 格式化代码
-black .
+# 查看当前分支
+git branch
 
-# 检查代码风格
-flake8 .
+# 切换到开发分支
+git checkout dev
 
-# 类型检查
-mypy .
+# 切换到稳定分支
+git checkout main
 ```
 
-#### 测试要求
+### Commit 规范
 
-所有代码更改必须包含测试：
+使用语义化的 commit message：
 
-```python
-# tests/test_your_feature.py
+- `feat:` - 新功能
+- `fix:` - Bug 修复
+- `docs:` - 文档更新
+- `refactor:` - 代码重构
+- `test:` - 测试相关
+- `chore:` - 构建/工具相关
 
-def test_your_feature():
-    """测试您的功能"""
-    result = your_function("test input")
-    assert result == "expected output"
-```
-
-运行测试：
-
+示例：
 ```bash
-# 运行所有测试
-python -m pytest
-
-# 运行特定测试
-python -m pytest tests/test_your_feature.py
-
-# 查看覆盖率
-python -m pytest --cov=.
+git commit -m "feat: add triplet search API endpoint"
+git commit -m "fix: resolve metadata timestamp compatibility issue"
+git commit -m "docs: update cost analysis in README"
 ```
 
-#### Pull Request 检查清单
+## 开发建议
 
-提交 PR 前，请确认：
+### 测试环境
 
-- [ ] 代码通过所有测试
-- [ ] 添加了必要的测试用例
-- [ ] 更新了相关文档
-- [ ] 提交信息清晰明确
-- [ ] 代码符合项目风格
-- [ ] 没有引入新的依赖（或已说明原因）
+在 dev 分支开发时：
 
----
+1. **使用测试数据**：放在 `examples/data_samples/` 目录
+2. **检查点管理**：开发时使用 `--fresh` 清除旧检查点
+3. **API 测试**：使用小规模数据验证功能
 
-## Pull Request 流程
+### 代码质量
 
-1. **审查**：维护者会审查您的 PR
-2. **反馈**：可能会要求进行修改
-3. **更新**：根据反馈更新代码
-4. **合并**：通过审查后会被合并
+- 保持代码简洁，避免过度设计
+- 添加必要的注释（中文）
+- 确保错误处理完善
+- 测试通过后再合并到 main
 
-### PR 审查标准
+### 文档同步
 
-- ✅ 功能正确实现
-- ✅ 代码质量良好
-- ✅ 测试覆盖充分
-- ✅ 文档完整准确
-- ✅ 无明显性能问题
+功能开发完成后，确保更新相关文档：
 
----
+- `README.md` - 主要功能说明
+- 模块 `README.md` - 具体模块文档
+- `CHANGELOG.md` - 版本变更记录
 
-## 开发环境设置
+## 问题反馈
 
-### 必需工具
-
-- Python 3.8+
-- Git
-- virtualenv 或 conda
-
-### 安装开发依赖
-
-```bash
-# 创建虚拟环境
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate  # Windows
-
-# 安装依赖
-pip install -r requirements.txt
-pip install -r requirements-dev.txt  # 开发依赖
-
-# 安装 pre-commit hooks
-pre-commit install
-```
-
-### 配置 IDE
-
-**VSCode 配置** (`.vscode/settings.json`):
-
-```json
-{
-  "python.formatting.provider": "black",
-  "python.linting.enabled": true,
-  "python.linting.flake8Enabled": true,
-  "python.linting.mypyEnabled": true,
-  "editor.formatOnSave": true
-}
-```
+遇到问题请在 [GitHub Issues](https://github.com/mixuechu/WeMemory/issues) 提交。
 
 ---
 
-## 项目结构
-
-```
-WeMemory/
-├── api/              # API 服务
-├── embedding/        # Embedding 模块
-├── retrieval/        # 检索模块
-├── knowledge_graph/  # 知识图谱模块
-├── data_loader/      # 数据加载模块
-├── tests/            # 测试代码
-├── docs/             # 文档
-└── examples/         # 示例代码
-```
-
----
-
-## 常见问题
-
-### Q: 我不会 Python，可以贡献吗？
-
-可以！您可以：
-- 改进文档
-- 报告 Bug
-- 提出功能建议
-- 帮助翻译
-
-### Q: 我的 PR 多久会被审查？
-
-通常在 1-3 个工作日内。如果超过一周没有回复，请友好地提醒我们。
-
-### Q: 我可以一次提交多个功能吗？
-
-建议每个 PR 只包含一个功能或修复，这样更容易审查和合并。
-
----
-
-## 获取帮助
-
-- 📚 查阅[完整文档](README.md)
-- 💬 在 [Discussions](https://github.com/mixuechu/WeMemory/discussions) 提问
-- 📧 联系维护者
-
----
-
-## 许可证
-
-通过贡献，您同意您的贡献将按照 [MIT License](LICENSE) 进行许可。
-
----
-
-感谢您的贡献！🎉
+**Happy Coding! 🚀**
