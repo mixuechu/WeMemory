@@ -43,7 +43,7 @@ async def lifespan(app: FastAPI):
     # 获取向量库路径
     vector_store_path = os.getenv(
         "VECTOR_STORE_PATH",
-        "vector_stores/conversations.pkl"
+        "vector_stores/conversations/embeddings.pkl"
     )
 
     if not os.path.exists(vector_store_path):

@@ -51,6 +51,22 @@ class RecallService:
         print(f"[RecallService] 初始化完成，耗时: {load_time:.2f}秒")
         print(f"[RecallService] 向量库大小: {len(self.vector_store.metadata):,} 个记忆")
 
+    def _get_timestamp(self, metadata: dict) -> int:
+        """
+        从metadata中获取timestamp（兼容新旧格式）
+
+        新格式: start_time (ISO字符串)
+        旧格式: start_timestamp (整数)
+        """
+        if 'start_timestamp' in metadata:
+            return int(metadata['start_timestamp'])
+        elif 'start_time' in metadata:
+            from dateutil import parser
+            dt = parser.parse(metadata['start_time'])
+            return int(dt.timestamp())
+        else:
+            return 0
+
     def recall(
         self,
         context: str,
@@ -124,7 +140,7 @@ class RecallService:
                 'content': result['metadata']['content_text'],
                 'relevance_score': float(result['score']),
                 'recall_reason': reason,
-                'timestamp': int(result['metadata']['start_timestamp']),
+                'timestamp': self._get_timestamp(result['metadata']),
                 'conversation_name': result['metadata']['conversation_name'],
                 'participants': result['metadata']['participants'],
             }
@@ -312,7 +328,7 @@ class RecallService:
                 'content': result['metadata']['content_text'],
                 'relevance_score': float(result['score']),
                 'recall_reason': "关键词匹配",
-                'timestamp': int(result['metadata']['start_timestamp']),
+                'timestamp': self._get_timestamp(result['metadata']),
                 'conversation_name': result['metadata']['conversation_name'],
                 'participants': result['metadata']['participants'],
             }
@@ -329,7 +345,7 @@ class RecallService:
         metadata_list = self.vector_store.metadata
 
         # 时间范围
-        timestamps = [m['start_timestamp'] for m in metadata_list]
+        timestamps = [self._get_timestamp(m) for m in metadata_list]
         date_range = {
             'earliest': int(min(timestamps)) if timestamps else 0,
             'latest': int(max(timestamps)) if timestamps else 0
@@ -459,7 +475,7 @@ class RecallService:
     def _generate_memory_id(self, result: Dict) -> str:
         """生成记忆唯一ID"""
         metadata = result['metadata']
-        unique_str = f"{metadata['conversation_name']}_{metadata['start_timestamp']}"
+        unique_str = f"{metadata['conversation_name']}_{self._get_timestamp(metadata)}"
         return hashlib.md5(unique_str.encode()).hexdigest()[:16]
 
     def _generate_cache_key(
