@@ -143,16 +143,36 @@ class PipelineOrchestrator:
         }
 
     def _run_knowledge_extraction(self, resume: bool = True, **kwargs):
-        """执行知识抽取（待实现）"""
-        print("⚠️  Knowledge Extraction Pipeline 暂未实现")
-        print("请参考: knowledge_graph/ 目录中的脚本")
-        return {}
+        """执行知识抽取"""
+        from pipeline.knowledge_extraction import KnowledgeExtractionPipeline
+
+        pipeline = KnowledgeExtractionPipeline(
+            config=self.config,
+            checkpoint_dir=self.checkpoint_dir,
+            **kwargs
+        )
+        pipeline.run(resume=resume)
+
+        return {
+            'status': 'completed',
+            'note': 'simplified_implementation'
+        }
 
     def _run_graph_building(self, resume: bool = True, **kwargs):
-        """执行图谱构建（待实现）"""
-        print("⚠️  Graph Building Pipeline 暂未实现")
-        print("请参考: knowledge_graph/ 目录中的脚本")
-        return {}
+        """执行图谱构建"""
+        from pipeline.graph_building import GraphBuildingPipeline
+
+        pipeline = GraphBuildingPipeline(
+            config=self.config,
+            checkpoint_dir=self.checkpoint_dir,
+            **kwargs
+        )
+        pipeline.run(resume=resume)
+
+        return {
+            'status': 'completed',
+            'note': 'simplified_implementation'
+        }
 
     def run_all(self, resume: bool = True):
         """执行全流程"""
