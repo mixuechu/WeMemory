@@ -29,6 +29,9 @@ chat_data_filtered/
 *.xlsx
 *.xls
 
+# 知识图谱工具（实验性工具，包含个人信息）
+knowledge_graph/tools/
+
 # 向量库文件（太大，不适合上传）
 vector_stores/*.pkl
 vector_stores/*.faiss
