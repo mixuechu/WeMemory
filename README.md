@@ -102,18 +102,18 @@ curl http://localhost:8000/api/persona/available
 curl -X POST http://localhost:8000/api/persona/chat \
   -H "Content-Type: application/json" \
   -d '{
-    "person_name": "成都乖巧萌",
+    "person_name": "老婆",
     "user_message": "最近工作怎么样呀？",
     "top_k": 5
   }'
 
 # 响应示例
 {
-  "person_name": "成都乖巧萌",
+  "person_name": "老婆",
   "messages": [
     "还那样呗",
     "烦死了",
-    "最近好多奇奇怪怪的事"
+    "最近好多奇奇怪怪的事情"
   ],
   "memories_used": [...],
   "processing_time_ms": 4582
@@ -134,7 +134,7 @@ curl -X POST http://localhost:8000/api/persona/chat \
 | 场景 | API | 检索范围 | 用途 | 性能优化 |
 |------|-----|----------|------|----------|
 | 🧠 **个人助理** | `/api/recall` | 全局（53,732条记忆） | 记忆联想、知识查询<br>"我上周和谁聊过AI？" | 混合检索（BM25 + 向量） |
-| 🤖 **AI数字人** | `/api/persona/chat` | 特定人物（如10,404条） | 模拟对话风格<br>和"成都乖巧萌"聊天 | 人名索引（O(1)查找） |
+| 🤖 **AI数字人** | `/api/persona/chat` | 特定人物（如10,404条） | 模拟对话风格<br>和"老婆"聊天 | 人名索引（O(1)查找） |
 
 **架构优化**：
 - **人名索引映射**：启动时构建 `person_name → [indices]` 索引（138个人物）
