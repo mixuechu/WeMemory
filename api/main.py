@@ -20,7 +20,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.routers import recall, system
+from api.routers import recall, system, persona
 from api.services.recall_service import RecallService
 
 # 加载环境变量
@@ -57,6 +57,13 @@ async def lifespan(app: FastAPI):
 
     # 设置全局服务实例
     recall.set_recall_service(service)
+    persona.set_recall_service(service)  # Persona也需要RecallService
+
+    # 预加载所有PersonaAgent实例
+    print("\n" + "=" * 70)
+    print("预加载 PersonaAgent 实例...")
+    print("=" * 70)
+    persona.preload_all_personas()
 
     print("\n" + "=" * 70)
     print("✓ WeMemory API 启动成功！")
@@ -137,6 +144,7 @@ app.add_middleware(
 # 注册路由
 app.include_router(recall.router)
 app.include_router(system.router)
+app.include_router(persona.router)
 
 
 # 根路径
