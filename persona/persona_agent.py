@@ -122,10 +122,7 @@ class PersonaAgent:
         """
         检索该人物在类似场景下的真实对话
 
-        策略：
-        1. 先从向量库中筛选出该人物的所有对话
-        2. 在这些对话中进行语义匹配
-        3. 返回最相关的top_k条
+        使用 RecallService.recall_for_person() 进行检索
 
         Args:
             query: 查询内容
@@ -134,58 +131,19 @@ class PersonaAgent:
         Returns:
             记忆列表
         """
-        import numpy as np
+        # 使用专门的 recall_for_person 方法（先过滤人物，再语义搜索）
+        memories = self.recall_service.recall_for_person(
+            person_name=self.person_name,
+            context=query,
+            top_k=top_k,
+            min_relevance=0.0  # PersonaAgent 不需要过滤低相关性，需要尽可能多的样本
+        )
 
-        # 获取该人物的所有对话索引
-        person_indices = []
-        all_metadata = self.recall_service.vector_store.metadata
+        print(f"[PersonaAgent] 检索到 {len(memories)} 条 {self.person_name} 的对话记忆")
 
-        for idx, meta in enumerate(all_metadata):
-            conv_name = meta.get('conversation_name', '')
-            participants = meta.get('participants', [])
-
-            # 匹配该人物
-            if conv_name == self.person_name or self.person_name in participants:
-                person_indices.append(idx)
-
-        print(f"[PersonaAgent] 找到 {len(person_indices)} 条该人物的对话记忆")
-
-        if len(person_indices) == 0:
-            print(f"[PersonaAgent] 警告：未找到 {self.person_name} 的任何对话记忆")
-            return []
-
-        # 生成查询向量
-        query_embedding = self.recall_service.embedding_client.get_embeddings([query])[0]
-
-        # 在该人物的对话中进行相似度计算
-        similarities = []
-        content_embeddings = self.recall_service.vector_store.content_embeddings
-
-        for idx in person_indices:
-            # 计算余弦相似度
-            content_emb = content_embeddings[idx]
-            similarity = np.dot(query_embedding, content_emb) / (
-                np.linalg.norm(query_embedding) * np.linalg.norm(content_emb)
-            )
-            similarities.append((idx, similarity, all_metadata[idx]))
-
-        # 按相似度排序
-        similarities.sort(key=lambda x: x[1], reverse=True)
-
-        # 取top_k条
-        top_results = similarities[:top_k]
-
-        # 格式化为memories格式
-        memories = []
-        for idx, score, meta in top_results:
-            memory = {
-                'conversation_name': meta['conversation_name'],
-                'content': meta['content_text'],
-                'relevance_score': float(score),
-                'participants': meta.get('participants', [])
-            }
-            memories.append(memory)
-            print(f"[PersonaAgent] ✓ {meta['conversation_name']}, 相关度: {score:.3f}")
+        # 打印相关度
+        for mem in memories:
+            print(f"[PersonaAgent] ✓ {mem['conversation_name']}, 相关度: {mem['relevance_score']:.3f}")
 
         return memories
     

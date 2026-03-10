@@ -67,6 +67,83 @@ class RecallService:
         else:
             return 0
 
+    def recall_for_person(
+        self,
+        person_name: str,
+        context: str,
+        top_k: int = 5,
+        min_relevance: float = 0.0
+    ) -> List[Dict[str, Any]]:
+        """
+        针对特定人物的记忆检索（用于 PersonaAgent）
+
+        策略：先过滤出该人物的所有对话，再在其中进行语义搜索
+
+        Args:
+            person_name: 人物名称
+            context: 查询上下文
+            top_k: 返回记忆数量
+            min_relevance: 最小相关性阈值（默认0，PersonaAgent需要尽可能多的样本）
+
+        Returns:
+            记忆列表
+        """
+        import numpy as np
+
+        # 1. 先过滤出该人物的所有对话索引
+        person_indices = []
+        all_metadata = self.vector_store.metadata
+
+        for idx, meta in enumerate(all_metadata):
+            conv_name = meta.get('conversation_name', '')
+            participants = meta.get('participants', [])
+
+            # 匹配该人物（conversation_name 或 participants）
+            if conv_name == person_name or person_name in participants:
+                person_indices.append(idx)
+
+        if len(person_indices) == 0:
+            print(f"[RecallService] 警告：未找到 {person_name} 的任何对话记忆")
+            return []
+
+        print(f"[RecallService] 找到 {len(person_indices)} 条 {person_name} 的对话记忆")
+
+        # 2. 生成查询向量
+        query_embedding = self.embedding_client.get_embeddings([context])[0]
+
+        # 3. 在该人物的对话中计算相似度
+        similarities = []
+        content_embeddings = self.vector_store.content_embeddings
+
+        for idx in person_indices:
+            # 计算余弦相似度
+            content_emb = content_embeddings[idx]
+            similarity = np.dot(query_embedding, content_emb) / (
+                np.linalg.norm(query_embedding) * np.linalg.norm(content_emb)
+            )
+
+            # 应用相关性阈值
+            if similarity >= min_relevance:
+                similarities.append((idx, similarity, all_metadata[idx]))
+
+        # 4. 按相似度排序，取 top_k
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        top_results = similarities[:top_k]
+
+        # 5. 格式化为标准记忆格式
+        memories = []
+        for idx, score, meta in top_results:
+            memory = {
+                'content': meta['content_text'],
+                'relevance_score': float(score),
+                'conversation_name': meta['conversation_name'],
+                'participants': meta.get('participants', []),
+                'timestamp': self._get_timestamp(meta)
+            }
+            memories.append(memory)
+
+        return memories
+
     def recall(
         self,
         context: str,
