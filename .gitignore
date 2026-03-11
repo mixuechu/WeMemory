@@ -145,6 +145,7 @@ data/conversations/
 
 # 知识图谱数据（可选上传小规模示例）
 data/knowledge_graph/*.json
+data/knowledge_graph/*.backup*
 
 # ============ 前端项目（独立仓库）============
 # Meng 个人网站项目（有独立的 git 仓库）

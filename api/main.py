@@ -20,8 +20,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.routers import recall, system, persona
+from api.routers import recall, system, persona, comprehensive
 from api.services.recall_service import RecallService
+from api.services.triplet_search_service import TripletSearchService
 
 # 加载环境变量
 load_dotenv()
@@ -58,6 +59,25 @@ async def lifespan(app: FastAPI):
     # 设置全局服务实例
     recall.set_recall_service(service)
     persona.set_recall_service(service)  # Persona也需要RecallService
+
+    # 初始化三元组搜索服务
+    triplet_store_path = os.getenv(
+        "TRIPLET_STORE_PATH",
+        "vector_stores/triplets"
+    )
+
+    if os.path.exists(triplet_store_path):
+        print(f"\n加载三元组向量库: {triplet_store_path}")
+        try:
+            triplet_service = TripletSearchService(triplet_store_path)
+            comprehensive.set_services(service, triplet_service)
+            print("✓ 三元组搜索服务已启动")
+        except Exception as e:
+            print(f"[WARNING] 三元组服务初始化失败: {e}")
+            print("综合搜索功能将不可用")
+    else:
+        print(f"[WARNING] 三元组向量库不存在: {triplet_store_path}")
+        print("综合搜索功能将不可用")
 
     # 预加载所有PersonaAgent实例
     print("\n" + "=" * 70)
@@ -145,6 +165,7 @@ app.add_middleware(
 app.include_router(recall.router)
 app.include_router(system.router)
 app.include_router(persona.router)
+app.include_router(comprehensive.router)
 
 
 # 根路径

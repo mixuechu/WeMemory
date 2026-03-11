@@ -8,6 +8,8 @@
 """
 import time
 import hashlib
+import json
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 
@@ -47,6 +49,9 @@ class RecallService:
         self._cache: Dict[str, Any] = {}
         self._cache_ttl = 3600  # 1小时
 
+        # 加载实体别名映射
+        self._load_entity_alias_map()
+
         # 构建人名 -> 记忆索引的映射（用于快速查找特定人物的对话）
         print(f"[RecallService] 构建人名索引...")
         self._person_to_indices = self._build_person_index()
@@ -55,6 +60,62 @@ class RecallService:
         load_time = time.time() - start_time
         print(f"[RecallService] 初始化完成，耗时: {load_time:.2f}秒")
         print(f"[RecallService] 向量库大小: {len(self.vector_store.metadata):,} 个记忆")
+
+    def _load_entity_alias_map(self):
+        """
+        加载实体别名映射
+
+        从 data/knowledge_graph/entity_alias_map.json 加载别名映射表
+        """
+        alias_map_path = Path(__file__).parent.parent.parent / "data" / "knowledge_graph" / "entity_alias_map.json"
+
+        if not alias_map_path.exists():
+            print(f"[RecallService] 警告：未找到实体别名映射文件: {alias_map_path}")
+            self.entity_alias_map = {}
+            self.alias_to_canonical = {}
+            return
+
+        try:
+            with open(alias_map_path, 'r', encoding='utf-8') as f:
+                self.entity_alias_map = json.load(f)
+
+            # 构建反向映射：别名 -> 主实体名
+            self.alias_to_canonical = {}
+            for canonical_name, aliases in self.entity_alias_map.items():
+                for alias in aliases:
+                    # 不区分大小写
+                    self.alias_to_canonical[alias.lower()] = canonical_name
+
+            print(f"[RecallService] 加载实体别名映射: {len(self.entity_alias_map)} 个实体, {len(self.alias_to_canonical)} 个别名")
+        except Exception as e:
+            print(f"[RecallService] 警告：加载实体别名映射失败: {e}")
+            self.entity_alias_map = {}
+            self.alias_to_canonical = {}
+
+    def _resolve_entity_alias(self, name: str) -> str:
+        """
+        解析实体别名到主实体名
+
+        Args:
+            name: 输入的人名（可能是别名）
+
+        Returns:
+            主实体名（如果找到），否则返回原名
+        """
+        if not name:
+            return name
+
+        # 不区分大小写查找
+        name_lower = name.lower()
+        canonical = self.alias_to_canonical.get(name_lower)
+
+        if canonical:
+            if canonical != name:
+                print(f"[RecallService] 别名解析: '{name}' -> '{canonical}'")
+            return canonical
+
+        # 没找到别名映射，返回原名
+        return name
 
     def _build_person_index(self) -> Dict[str, List[int]]:
         """
@@ -71,9 +132,12 @@ class RecallService:
         for idx, meta in enumerate(self.vector_store.metadata):
             conv_name = meta.get('conversation_name', '')
             if conv_name:
-                if conv_name not in person_to_indices:
-                    person_to_indices[conv_name] = []
-                person_to_indices[conv_name].append(idx)
+                # 解析别名到主实体名
+                canonical_name = self._resolve_entity_alias(conv_name)
+
+                if canonical_name not in person_to_indices:
+                    person_to_indices[canonical_name] = []
+                person_to_indices[canonical_name].append(idx)
 
         return person_to_indices
 
@@ -106,7 +170,7 @@ class RecallService:
         策略：先过滤出该人物的所有对话，再在其中进行语义搜索
 
         Args:
-            person_name: 人物名称
+            person_name: 人物名称（可以是别名，会自动解析）
             context: 查询上下文
             top_k: 返回记忆数量
             min_relevance: 最小相关性阈值（默认0，PersonaAgent需要尽可能多的样本）
@@ -116,14 +180,17 @@ class RecallService:
         """
         import numpy as np
 
+        # 0. 解析别名到主实体名
+        canonical_name = self._resolve_entity_alias(person_name)
+
         # 1. 从索引中快速获取该人物的所有对话索引（O(1) 查找）
-        person_indices = self._person_to_indices.get(person_name, [])
+        person_indices = self._person_to_indices.get(canonical_name, [])
 
         if len(person_indices) == 0:
-            print(f"[RecallService] 警告：未找到 {person_name} 的任何对话记忆")
+            print(f"[RecallService] 警告：未找到 {canonical_name} (原输入: {person_name}) 的任何对话记忆")
             return []
 
-        print(f"[RecallService] 从索引中找到 {len(person_indices)} 条 {person_name} 的对话记忆")
+        print(f"[RecallService] 从索引中找到 {len(person_indices)} 条 {canonical_name} 的对话记忆")
 
         # 2. 生成查询向量
         query_embedding = self.embedding_client.get_embeddings([context])[0]
