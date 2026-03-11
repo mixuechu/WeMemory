@@ -202,6 +202,9 @@ async def get_available_personas(
         # 从向量库metadata中提取对话信息
         metadata_list = service.vector_store.metadata
 
+        # 获取entity_alias_map（用于查找正式名字）
+        alias_to_canonical = getattr(service, 'alias_to_canonical', {})
+
         # 统计每个conversation的信息
         conv_info = {}
 
@@ -222,8 +225,13 @@ async def get_available_personas(
         # 转换为列表格式
         personas = []
         for conv_name, info in conv_info.items():
+            # 查找正式名字（canonical name）
+            canonical_name = alias_to_canonical.get(conv_name.lower(), conv_name)
+
             personas.append({
                 'conversation_name': conv_name,
+                'canonical_name': canonical_name,  # 正式名字
+                'display_name': canonical_name if canonical_name != conv_name else conv_name,
                 'memory_count': info['memory_count'],
                 'participants': sorted(list(info['participants']))
             })
@@ -234,7 +242,7 @@ async def get_available_personas(
         return {
             "total_conversations": len(personas),
             "available_personas": personas,
-            "usage_note": "可以使用 conversation_name 或 participants 中的任何名字来创建AI数字人"
+            "usage_note": "可以使用 conversation_name 或 canonical_name 来创建AI数字人"
         }
 
     except Exception as e:
