@@ -172,3 +172,5 @@ data/knowledge_graph/*.backup*
 # ============ 前端项目（独立仓库）============
 # Meng 个人网站项目（有独立的 git 仓库）
 Meng/
+# 临时测试脚本
+test_auth_api.sh
