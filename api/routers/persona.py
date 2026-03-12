@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 from persona import PersonaAgent
 from api.services.recall_service import RecallService
+from api.auth import verify_api_key
 
 
 router = APIRouter(prefix="/api/persona", tags=["persona"])
@@ -148,7 +149,8 @@ class PersonaChatResponse(BaseModel):
 )
 async def chat_with_persona(
     request: PersonaChatRequest,
-    service: Annotated[RecallService, Depends(get_recall_service)]
+    service: Annotated[RecallService, Depends(get_recall_service)],
+    verified: bool = Depends(verify_api_key)
 ):
     """与AI数字人对话"""
     try:
@@ -195,7 +197,8 @@ async def chat_with_persona(
     description="返回向量库中所有对话的列表，包括对话名称和实际参与者"
 )
 async def get_available_personas(
-    service: Annotated[RecallService, Depends(get_recall_service)]
+    service: Annotated[RecallService, Depends(get_recall_service)],
+    verified: bool = Depends(verify_api_key)
 ):
     """获取可用的AI数字人列表"""
     try:
@@ -258,7 +261,8 @@ async def get_available_personas(
 )
 async def get_persona_profile(
     person_name: str,
-    service: Annotated[RecallService, Depends(get_recall_service)]
+    service: Annotated[RecallService, Depends(get_recall_service)],
+    verified: bool = Depends(verify_api_key)
 ):
     """获取人物核心人设（5-10条核心三元组）"""
     try:

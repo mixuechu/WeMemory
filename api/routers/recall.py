@@ -7,6 +7,8 @@ import uuid
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Annotated
 
+from api.auth import verify_api_key
+
 from api.models.request import (
     RecallRequest,
     TopicAssociationRequest,
@@ -69,7 +71,8 @@ def set_recall_service(service: RecallService):
 )
 async def recall_memories(
     request: RecallRequest,
-    service: Annotated[RecallService, Depends(get_recall_service)]
+    service: Annotated[RecallService, Depends(get_recall_service)],
+    verified: bool = Depends(verify_api_key)
 ):
     """记忆联想"""
     try:
@@ -105,7 +108,8 @@ async def recall_memories(
 )
 async def associate_by_topic(
     request: TopicAssociationRequest,
-    service: Annotated[RecallService, Depends(get_recall_service)]
+    service: Annotated[RecallService, Depends(get_recall_service)],
+    verified: bool = Depends(verify_api_key)
 ):
     """主题关联"""
     try:
@@ -132,7 +136,8 @@ async def associate_by_topic(
 )
 async def associate_by_people(
     request: PeopleAssociationRequest,
-    service: Annotated[RecallService, Depends(get_recall_service)]
+    service: Annotated[RecallService, Depends(get_recall_service)],
+    verified: bool = Depends(verify_api_key)
 ):
     """人物关联"""
     try:
@@ -159,7 +164,8 @@ async def associate_by_people(
 )
 async def associate_by_time(
     request: TemporalAssociationRequest,
-    service: Annotated[RecallService, Depends(get_recall_service)]
+    service: Annotated[RecallService, Depends(get_recall_service)],
+    verified: bool = Depends(verify_api_key)
 ):
     """时序联想"""
     try:
@@ -192,7 +198,8 @@ async def associate_by_time(
 )
 async def simple_search(
     request: SimpleSearchRequest,
-    service: Annotated[RecallService, Depends(get_recall_service)]
+    service: Annotated[RecallService, Depends(get_recall_service)],
+    verified: bool = Depends(verify_api_key)
 ):
     """简单搜索"""
     try:

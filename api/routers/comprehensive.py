@@ -4,12 +4,13 @@
 综合搜索路由 - 同时搜索聊天记录和知识图谱
 """
 import uuid
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Literal, Optional, List, Dict, Any
 
 from api.services.recall_service import RecallService
 from api.services.triplet_search_service import TripletSearchService
+from api.auth import verify_api_key
 
 
 router = APIRouter(prefix="/api/comprehensive", tags=["comprehensive"])
@@ -88,7 +89,10 @@ class ComprehensiveSearchResponse(BaseModel):
     - 查询事件：获取结构化事实 + 对话详情
     """
 )
-async def comprehensive_search(request: ComprehensiveSearchRequest):
+async def comprehensive_search(
+    request: ComprehensiveSearchRequest,
+    verified: bool = Depends(verify_api_key)
+):
     """综合搜索 - 同时搜索聊天记录和三元组"""
     if not _recall_service or not _triplet_service:
         raise HTTPException(
@@ -182,7 +186,10 @@ class PersonaKnowledgeResponse(BaseModel):
     - 人物画像：了解某个人的完整信息
     """
 )
-async def get_persona_knowledge(request: PersonaKnowledgeRequest):
+async def get_persona_knowledge(
+    request: PersonaKnowledgeRequest,
+    verified: bool = Depends(verify_api_key)
+):
     """获取人物相关的知识图谱三元组"""
     if not _triplet_service:
         raise HTTPException(

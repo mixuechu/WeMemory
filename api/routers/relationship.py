@@ -6,10 +6,11 @@
 提供轻量级的人物关系查询API，作为个人助理的Tool使用。
 """
 from typing import Optional, List
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Depends
 from pydantic import BaseModel, Field
 
 from api.services.relationship_service import RelationshipService
+from api.auth import verify_api_key
 
 router = APIRouter(prefix="/api/relationships", tags=["relationships"])
 
@@ -88,7 +89,8 @@ class StatsResponse(BaseModel):
 )
 async def query_relationships(
     query: str = Query(..., description="查询字符串，如'赵萌'或'赵萌的配偶'"),
-    max_results: int = Query(10, ge=1, le=50, description="最大返回结果数")
+    max_results: int = Query(10, ge=1, le=50, description="最大返回结果数"),
+    verified: bool = Depends(verify_api_key)
 ):
     """
     查询人物关系（智能查询）
@@ -109,7 +111,8 @@ async def query_relationships(
 )
 async def get_person_relationships(
     person_name: str,
-    include_profile: bool = Query(True, description="是否包含人物简介")
+    include_profile: bool = Query(True, description="是否包含人物简介"),
+    verified: bool = Depends(verify_api_key)
 ):
     """获取人物所有关系"""
     service = get_service()
@@ -130,7 +133,10 @@ async def get_person_relationships(
     summary="获取家族树",
     description="获取某人的直系家属关系（配偶、父母、孩子、兄弟姐妹）"
 )
-async def get_family_tree(person_name: str):
+async def get_family_tree(
+    person_name: str,
+    verified: bool = Depends(verify_api_key)
+):
     """获取家族树"""
     service = get_service()
     result = service.get_family_tree(person_name)
@@ -148,7 +154,8 @@ async def get_related_people(
     relation_types: Optional[str] = Query(
         None,
         description="关系类型过滤，多个用逗号分隔，如'HAS_SPOUSE,HAS_CHILD'"
-    )
+    ),
+    verified: bool = Depends(verify_api_key)
 ):
     """获取相关人物"""
     service = get_service()
@@ -168,7 +175,7 @@ async def get_related_people(
     summary="获取统计信息",
     description="获取关系数据的统计信息"
 )
-async def get_stats():
+async def get_stats(verified: bool = Depends(verify_api_key)):
     """获取统计信息"""
     service = get_service()
     return service.get_stats()
@@ -180,7 +187,8 @@ async def get_stats():
     description="搜索人物（支持模糊匹配）"
 )
 async def search_person(
-    query: str = Query(..., description="查询字符串")
+    query: str = Query(..., description="查询字符串"),
+    verified: bool = Depends(verify_api_key)
 ):
     """搜索人物"""
     service = get_service()
