@@ -29,6 +29,10 @@ chat_data_filtered/
 *.xlsx
 *.xls
 
+# 个人简历和文档（隐私）
+*Resume*.pdf
+*简历*.pdf
+
 # 知识图谱工具（实验性工具，包含个人信息）
 knowledge_graph/tools/
 
@@ -39,6 +43,9 @@ vector_stores/shards/
 vector_stores/patches/
 *.pkl
 *.faiss
+
+# 核心关系数据（个人隐私）
+data/relationships/
 
 # ============ Python ============
 # 字节码
@@ -72,9 +79,24 @@ logs/
 *.swo
 *~
 .DS_Store
+temp/
+
+# 备份文件
+*_backup*
+*_old*
+*.backup
+*.bak
 
 # Checkpoint 文件
 checkpoint_*.pkl
+
+# 临时HTML文件
+persona_editor*.html
+*_temp.html
+*_test.html
+
+# 临时数据文件
+persona_data.js
 
 # ============ IDE 和编辑器 ============
 # VSCode

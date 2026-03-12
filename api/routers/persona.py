@@ -250,3 +250,85 @@ async def get_available_personas(
             status_code=500,
             detail=f"获取人物列表失败: {str(e)}"
         )
+
+@router.get(
+    "/{person_name}/profile",
+    summary="获取人物核心人设",
+    description="返回人物的核心三元组（关系、重要事件），用于构建数字人人设"
+)
+async def get_persona_profile(
+    person_name: str,
+    service: Annotated[RecallService, Depends(get_recall_service)]
+):
+    """获取人物核心人设（5-10条核心三元组）"""
+    try:
+        from api.services.triplet_search_service import TripletSearchService
+        from pathlib import Path
+
+        # 初始化三元组搜索服务
+        triplet_store_path = Path("vector_stores/triplets")
+        if not triplet_store_path.exists():
+            raise HTTPException(status_code=503, detail="三元组服务不可用")
+
+        triplet_service = TripletSearchService(str(triplet_store_path))
+
+        # 搜索该人物与用户的关系三元组
+        result = triplet_service.search(
+            query=f"{person_name}和米雪川",  # 查询人物与用户的关系
+            top_k=30,  # 搜索更多候选
+            min_score=0.4  # 适中阈值
+        )
+
+        # 过滤和排序：优先显示重要关系类型
+        important_relationships = []  # 配偶、家人等重要关系
+        other_relationships = []      # 其他关系
+        important_events = []         # 重要事件
+
+        # 关键词过滤：排除不重要的关系
+        unimportant_keywords = ['位于', '在酒店', '在北京', '在成都', '在广州', '在西安']
+
+        for triplet in result['triplets']:
+            text = triplet['text']
+
+            # 跳过不重要的"位于"关系
+            if any(keyword in text for keyword in unimportant_keywords):
+                continue
+
+            if triplet['type'] == 'relationship':
+                # 优先级：配偶 > 家人 > 工作 > 其他
+                if any(word in text for word in ['配偶', '老婆', '老公', '妻子', '丈夫', '结婚']):
+                    important_relationships.insert(0, triplet)  # 插在最前面
+                elif any(word in text for word in ['父', '母', '妈', '爸', '子', '女', '姐', '弟', '哥', '妹']):
+                    important_relationships.append(triplet)
+                elif any(word in text for word in ['工作', '公司', '职位']):
+                    important_relationships.append(triplet)
+                else:
+                    other_relationships.append(triplet)
+            elif triplet['type'] == 'event':
+                # 优先选择包含重要信息的事件
+                if any(word in text for word in ['结婚', '工作', '生日', '纪念']):
+                    important_events.insert(0, triplet)
+                else:
+                    important_events.append(triplet)
+
+        # 核心人设：最多5条关系 + 3条事件
+        core_triplets = (important_relationships + other_relationships)[:5] + important_events[:3]
+
+        return {
+            "person_name": person_name,
+            "core_knowledge": [
+                {
+                    "text": t['text'],
+                    "type": t['type'],
+                    "importance": "core"
+                } for t in core_triplets
+            ],
+            "total_count": len(core_triplets),
+            "usage_note": "这些是核心人设信息，应预置到System Prompt中"
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"获取人物人设失败: {str(e)}"
+        )

@@ -20,9 +20,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.routers import recall, system, persona, comprehensive
+from api.routers import recall, system, persona, comprehensive, relationship
 from api.services.recall_service import RecallService
 from api.services.triplet_search_service import TripletSearchService
+from api.services.relationship_service import RelationshipService
 
 # 加载环境变量
 load_dotenv()
@@ -78,6 +79,25 @@ async def lifespan(app: FastAPI):
     else:
         print(f"[WARNING] 三元组向量库不存在: {triplet_store_path}")
         print("综合搜索功能将不可用")
+
+    # 初始化核心关系服务
+    relationship_data_path = os.getenv(
+        "RELATIONSHIP_DATA_PATH",
+        "data/relationships/core_relationships.json"
+    )
+
+    if os.path.exists(relationship_data_path):
+        print(f"\n加载核心关系数据: {relationship_data_path}")
+        try:
+            relationship_service = RelationshipService(relationship_data_path)
+            relationship.set_relationship_service(relationship_service)
+            print("✓ 核心关系服务已启动")
+        except Exception as e:
+            print(f"[WARNING] 关系服务初始化失败: {e}")
+            print("关系查询功能将不可用")
+    else:
+        print(f"[WARNING] 关系数据不存在: {relationship_data_path}")
+        print("关系查询功能将不可用")
 
     # 预加载所有PersonaAgent实例
     print("\n" + "=" * 70)
@@ -166,6 +186,7 @@ app.include_router(recall.router)
 app.include_router(system.router)
 app.include_router(persona.router)
 app.include_router(comprehensive.router)
+app.include_router(relationship.router)
 
 
 # 根路径

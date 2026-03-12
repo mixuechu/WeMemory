@@ -38,7 +38,7 @@ vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
 
 # 1. 加载数据
 print("\n[1/5] 加载自然语言三元组数据...")
-input_file = 'natural_language_triplets_final.json'
+input_file = 'data/knowledge_graph/triplets.json'
 
 with open(input_file, 'r', encoding='utf-8') as f:
     data = json.load(f)
